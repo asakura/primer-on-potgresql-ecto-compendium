@@ -137,3 +137,11 @@
    DDL), группа операторов манипулирования данными (Data Manipulation Language —
    DML) и группа операторов, управляющих привилегиями доступа к объектам базы
    данных (Data Control Language — DCL).
+** Контрольные вопросы и задания
+*** Вопрос 1
+    Какие группы операторов выделяются в составе языка SQL?
+
+    ОТВЕТ:
+    - DDL - data definition language
+    - DML - data manipulation language
+    - DCL - data control language
