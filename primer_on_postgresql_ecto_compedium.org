@@ -1,0 +1,9 @@
+#+TITLE: Конспект PostgreSQL Основы языка SQL и Ecto
+#+AUTHOR: Mikalai Seva
+#+EMAIL: mikalai.seva@gmail.com
+#+DESCRIPTION:
+#+KEYWORDS: PostgreSQL SQL Primer Ecto Elixir
+#+LANGUAGE: ru, en
+#+OPTIONS: H:3 toc:2 p:t
+#+OPTIONS: ^:{}
+#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
