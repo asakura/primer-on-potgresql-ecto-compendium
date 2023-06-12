@@ -145,3 +145,70 @@
     - DDL - data definition language
     - DML - data manipulation language
     - DCL - data control language
+* Основные операции с таблицами
+  Для создания таблиц в языке SQL служит команда ~CREATE TABLE~. Итак, команда
+  для создания нашей первой таблицы ~aircrafts~ такова:
+
+  #+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
+    CREATE TABLE aircrafts(
+      aircraft_code char(3) NOT NULL,
+      model text NOT NULL,
+      range integer NOT NULL,
+      CHECK (range > 0),
+      PRIMARY KEY (aircraft_code)
+    );
+  #+END_SRC
+
+  #+RESULTS:
+  : CREATE TABLE
+  Значения всех атрибутов каждой строки данной таблицы должны быть
+  определенными, поэтому на них накладывается ограничение ~NOT NULL~. В
+  принципе в таблицах базы данных могут содержаться неопределенные значения
+  некоторых атрибутов. Говоря другими словами, их значения могут отсутствовать.
+  В таких случаях в этих полях содержится специальное значение ~NULL~.
+
+  К томуже атрибут ~range~ не должен принимать отрицательных значений и нулевого
+  значения, поэтому приходится добавить еще одно ограничение: ~range > 0~.
+
+  В качестве первичного ключа выбран атрибут ~aircraft_code~. Таким образом,
+  первичный ключ будет, как говорят, *естественным*. Это означает, что и в
+  реальной предметной области существует такое понятие, как код самолета, и это
+  понятие используется на практике. В отличие от естественных ключей иногда
+  используются и так называемые *суррогатные ключи*.
+
+  Проверим таблицу, которую создала СУБД:
+
+  #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  \a
+  \d aircrafts
+  #+END_SRC
+
+  #+RESULTS:
+  #+begin_example
+                     Table "public.aircrafts"
+      Column     |     Type     | Collation | Nullable | Default
+  ---------------+--------------+-----------+----------+---------
+   aircraft_code | character(3) |           | not null |
+   model         | text         |           | not null |
+   range         | integer      |           | not null |
+  Indexes:
+      "aircrafts_pkey" PRIMARY KEY, btree (aircraft_code)
+  Check constraints:
+      "aircrafts_range_check" CHECK (range > 0)
+  Referenced by:
+      TABLE "flights" CONSTRAINT "flights_aircraft_code_fkey" FOREIGN KEY (aircraft_code) REFERENCES aircrafts(aircraft_code)
+      TABLE "seats" CONSTRAINT "seats_aircraft_code_fkey" FOREIGN KEY (aircraft_code) REFERENCES aircrafts(aircraft_code) ON DELETE CASCADE
+
+  #+end_example
+
+  Для в вода данных в таблицу служит команда ~INSERT~. Давайте добавим одну
+  строку в таблицу ~aircrafts~.
+
+  #+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
+    INSERT INTO aircrafts (aircraft_code, model, range)
+      VALUES ('SU9', 'Sukhoi SuperJet-100', 3000);
+  #+END_SRC
+
+  #+RESULTS:
+  : INSERT 0 1
+
