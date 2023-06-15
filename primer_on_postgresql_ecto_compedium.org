@@ -176,6 +176,24 @@
         create constraint(:aircrafts, "aircrafts_range_check", check: "range > 0", comment: "range should be greater than 0")
       end
     end
+
+    defmodule AirDB.Aircraft do
+      use Ecto.Schema
+      import Ecto.Changeset
+      alias AirDB.Seat
+
+      @primary_key false
+      schema "aircrafts" do
+        field :aircraft_code, :string, primary_key: true
+        field :model, :string
+        field :range, :integer
+
+        has_many :seats, Seat,
+          foreign_key: :aircraft_code,
+          references: :aircraft_code,
+          on_replace: :mark_as_invalid
+      end
+    end
   #+END_SRC
 
   Значения всех атрибутов каждой строки данной таблицы должны быть
