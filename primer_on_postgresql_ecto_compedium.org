@@ -474,6 +474,33 @@
   | Airbus A320-200 |           320 |  5700 |
   | Airbus A321-200 |           321 |  5600 |
 
+  #+BEGIN_SRC elixir :eval no :exports both
+    # keyword example
+    query =
+      from a in "aircrafts",
+        where: a.range >= 4000 and a.range <= 6000,
+        select: [a.aircraft_code, a.model, a.range]
+
+    query
+    |> Repo.all()
+
+    # expression example
+    "aircrafts"
+    |> where([a], a.range >= 4000 and a.range <= 6000)
+    |> select([a], [a.aircraft_code, a.model, a.range])
+    |> Repo.all()
+  #+END_SRC
+
+  #+RESULTS:
+  : 13:42:28.212 [debug] QUERY OK source="aircrafts" db=0.2ms queue=0.4ms idle=18.1ms
+  : SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 WHERE ((a0."range" >= 4000) AND (a0."range" <= 6000)) []
+  :
+  : [
+  :   ["733", "Boeing 737-300", 4200],
+  :   ["320", "Airbus A320-200", 5700],
+  :   ["321", "Airbus A321-200", 5600]
+  : ]
+
   Команда ~UPDATE~ предназначенна для обновления данных в таблицах. Условие,
   указываемое в команде, должно ограничить диапазон обновляемых строк. Если это
   условие не задать, то будут обновлены все строки в таблице.
