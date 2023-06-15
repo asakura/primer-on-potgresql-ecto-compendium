@@ -288,6 +288,26 @@
   #+RESULTS:
   : INSERT 0 8
 
+  #+BEGIN_SRC elixir :exports both :eval no
+    Aircraft
+    |> Repo.insert_all([
+      %{aircraft_code: "773", model: "Boeing 777-300", range: 11100},
+      %{aircraft_code: "763", model: "Boeing 767-300", range: 7900},
+      %{aircraft_code: "733", model: "Boeing 737-300", range: 4200},
+      %{aircraft_code: "320", model: "Airbus A320-200", range: 5700},
+      %{aircraft_code: "321", model: "Airbus A321-200", range: 5600},
+      %{aircraft_code: "319", model: "Airbus A319-100", range: 6700},
+      %{aircraft_code: "CN1", model: "Cessna 208 Caravan", range: 1200},
+      %{aircraft_code: "CR2", model: "Bombardier CRJ-200", range: 2700}
+    ])
+  #+END_SRC
+
+  #+RESULTS:
+  : 13:37:23.199 [debug] QUERY OK db=3.4ms queue=0.5ms idle=28.0ms
+  : INSERT INTO "aircrafts" ("aircraft_code","model","range") VALUES ($1,$2,$3),($4,$5,$6),($7,$8,$9),($10,$11,$12),($13,$14,$15),($16,$17,$18),($19,$20,$21),($22,$23,$24) ["773", "Boeing 777-300", 11100, "763", "Boeing 767-300", 7900, "733", "Boeing 737-300", 4200, "320", "Airbus A320-200", 5700, "321", "Airbus A321-200", 5600, "319", "Airbus A319-100", 6700, "CN1", "Cessna 208 Caravan", 1200, "CR2", "Bombardier CRJ-200", 2700]
+  :
+  : {8, nil}
+
   Давайте посмотрим, что содержится в таблице ~aircrafts~. Для этого служит
   команда ~SELECT~.
 
