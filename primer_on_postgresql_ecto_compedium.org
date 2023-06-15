@@ -548,6 +548,28 @@
   |---------------+---------------------+-------|
   | SU9           | Sukhoi SuperJet-100 |  3500 |
 
+  #+BEGIN_SRC elixir :eval no :exports both
+    # keyword example
+    query =
+      from a in "aircrafts",
+        where: a.aircraft_code == "SU9",
+        select: [a.aircraft_code, a.model, a.range]
+
+    query
+    |> Repo.all()
+
+    # expression example
+    "aircrafts"
+    |> where([a], a.aircraft_code == "SU9")
+    |> select([a], [a.aircraft_code, a.model, a.range])
+    |> Repo.all()
+  #+END_SRC
+
+  #+RESULTS:
+  : 13:42:28.221 [debug] QUERY OK source="aircrafts" db=0.4ms queue=0.6ms idle=26.8ms
+  : SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 WHERE (a0."aircraft_code" = 'SU9') []
+  :
+  : [["SU9", "Sukhoi SuperJet-100", 3500]]
 
   Для удаления строк из таблиц используется команда ~DELETE~, которая похожа на
   команду ~SELECT~. Удалим какую-нибудь одну строку из таблицы ~aircrafts~:
