@@ -328,6 +328,80 @@
   |           CN1 | Cessna 208 Caravan  |  1200 |
   |           CR2 | Bombardier CRJ-200  |  2700 |
 
+  #+BEGIN_SRC elixir :exports both :eval no
+    Repo.all(Aircraft)
+  #+END_SRC
+
+  #+RESULTS:
+  : 13:42:28.202 [debug] QUERY OK source="aircrafts" db=0.3ms decode=0.5ms queue=0.6ms idle=2.3ms
+  : SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 []
+  :
+  : [
+  :   %AirDB.Aircraft{
+  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+  :     aircraft_code: "SU9",
+  :     model: "Sukhoi SuperJet-100",
+  :     range: 3000,
+  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+  :   },
+  :   %AirDB.Aircraft{
+  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+  :     aircraft_code: "773",
+  :     model: "Boeing 777-300",
+  :     range: 11100,
+  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+  :   },
+  :   %AirDB.Aircraft{
+  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+  :     aircraft_code: "763",
+  :     model: "Boeing 767-300",
+  :     range: 7900,
+  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+  :   },
+  :   %AirDB.Aircraft{
+  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+  :     aircraft_code: "733",
+  :     model: "Boeing 737-300",
+  :     range: 4200,
+  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+  :   },
+  :   %AirDB.Aircraft{
+  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+  :     aircraft_code: "320",
+  :     model: "Airbus A320-200",
+  :     range: 5700,
+  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+  :   },
+  :   %AirDB.Aircraft{
+  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+  :     aircraft_code: "321",
+  :     model: "Airbus A321-200",
+  :     range: 5600,
+  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+  :   },
+  :   %AirDB.Aircraft{
+  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+  :     aircraft_code: "319",
+  :     model: "Airbus A319-100",
+  :     range: 6700,
+  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+  :   },
+  :   %AirDB.Aircraft{
+  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+  :     aircraft_code: "CN1",
+  :     model: "Cessna 208 Caravan",
+  :     range: 1200,
+  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+  :   },
+  :   %AirDB.Aircraft{
+  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+  :     aircraft_code: "CR2",
+  :     model: "Bombardier CRJ-200",
+  :     range: 2700,
+  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+  :   }
+  : ]
+
   Давайте упорядочим строки по значению атрибута ~model~, а заодно изменим
   порядок расположения столбцов в выводе информации.
 
