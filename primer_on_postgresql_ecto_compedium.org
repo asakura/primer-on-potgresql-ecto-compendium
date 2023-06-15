@@ -247,6 +247,29 @@
   #+RESULTS:
   : INSERT 0 1
 
+  #+BEGIN_SRC elixir :eval no :exports both
+    %Aircraft{}
+    |> Aircraft.changeset(%{
+      aircraft_code: "SU9",
+      model: "Sukhoi SuperJet-100",
+      range: 3000
+    })
+    |> Repo.insert()
+  #+END_SRC
+
+  #+RESULTS:
+  : 13:37:23.184 [debug] QUERY OK db=10.7ms decode=0.6ms queue=8.0ms idle=0.0ms
+  : INSERT INTO "aircrafts" ("aircraft_code","model","range") VALUES ($1,$2,$3) ["SU9", "Sukhoi SuperJet-100", 3000]
+  :
+  : {:ok,
+  :  %AirDB.Aircraft{
+  :    __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+  :    aircraft_code: "SU9",
+  :    model: "Sukhoi SuperJet-100",
+  :    range: 3000,
+  :    seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+  :  }}
+
   Давайте добавим еще несколько строк в таблицу ~aircrafts~. Команда ~INSERT~
   позволяет сделать это за один раз.
 
