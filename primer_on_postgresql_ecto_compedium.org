@@ -422,6 +422,39 @@
   | Cessna 208 Caravan  |           CN1 |  1200 |
   | Sukhoi SuperJet-100 |           SU9 |  3000 |
 
+  #+BEGIN_SRC elixir :eval no :exports both
+    # keyword example
+    query =
+      from a in "aircrafts",
+        order_by: a.model,
+        select: [a.aircraft_code, a.model, a.range]
+
+    query
+    |> Repo.all()
+
+    # exspression example
+    "aircrafts"
+    |> order_by([a], asc: a.model)
+    |> select([a], [a.aircraft_code, a.model, a.range])
+    |> Repo.all()
+  #+END_SRC
+
+  #+RESULTS:
+  : 13:42:28.211 [debug] QUERY OK source="aircrafts" db=0.4ms queue=0.8ms idle=16.5ms
+  : SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 ORDER BY a0."model" []
+  :
+  : [
+  :   ["319", "Airbus A319-100", 6700],
+  :   ["320", "Airbus A320-200", 5700],
+  :   ["321", "Airbus A321-200", 5600],
+  :   ["733", "Boeing 737-300", 4200],
+  :   ["763", "Boeing 767-300", 7900],
+  :   ["773", "Boeing 777-300", 11100],
+  :   ["CR2", "Bombardier CRJ-200", 2700],
+  :   ["CN1", "Cessna 208 Caravan", 1200],
+  :   ["SU9", "Sukhoi SuperJet-100", 3000]
+  : ]
+
   Множество выбираемых строк можно ограничить с помощью предложения ~WHERE~
   команды ~SELECT~. Давайте выберем модели самолетов, у которых максимальная
   дальность полета находитсяв пределах от 4 до 6 тыс. км включительно. Условие
