@@ -516,6 +516,27 @@
   #+RESULTS:
   : UPDATE 1
 
+  #+BEGIN_SRC elixir :eval no :exports both
+    # keyword example
+    query =
+      from a in "aircrafts",
+        where: a.aircraft_code == "SU9"
+
+    query
+    |> Repo.update_all(set: [range: 3500])
+
+    # expression example
+    "aircrafts"
+    |> where([a], a.aircraft_code == "SU9")
+    |> Repo.update_all(set: [range: 3500])
+  #+END_SRC
+
+  #+RESULTS:
+  : 13:42:28.219 [debug] QUERY OK source="aircrafts" db=5.5ms queue=0.5ms idle=19.7ms
+  : UPDATE "aircrafts" AS a0 SET "range" = $1 WHERE (a0."aircraft_code" = 'SU9') [3500]
+  :
+  : {1, nil}
+
   Давайте проверим, что получилось в результате обновления данных.
 
   #+BEGIN_SRC sql :engine postgres :exports both :eval no
