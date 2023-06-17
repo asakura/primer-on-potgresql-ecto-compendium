@@ -643,6 +643,14 @@
   #+RESULTS:
   : DELETE 6
 
+  #+BEGIN_SRC elixir :eval no :exports both
+    Repo.delete_all("aircrafts")
+  #+END_SRC
+
+  #+RESULTS:
+  : 13:42:28.233 [debug] QUERY OK source="aircrafts" db=5.4ms queue=0.5ms idle=33.6ms
+  : DELETE FROM "aircrafts" AS a0 []
+
   Теперь в таблице ~aircrafts~ нет ни одной строки. Для продолжения работы
   необходимо эти данные восстановить.
 
