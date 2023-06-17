@@ -581,6 +581,27 @@
   #+RESULTS:
   : DELETE 1
 
+  #+BEGIN_SRC elixir :eval no :exports both
+    # keyword example
+    query =
+      from a in "aircrafts",
+        where: a.aircraft_code == "CN1"
+
+    query
+    |> Repo.delete_all()
+
+    # expression example
+    "aircrafts"
+    |> where([a], a.aircraft_code == "CN1")
+    |> Repo.delete_all()
+  #+END_SRC
+
+  #+RESULTS:
+  : 13:42:28.226 [debug] QUERY OK source="aircrafts" db=4.2ms queue=0.4ms idle=28.0ms
+  : DELETE FROM "aircrafts" AS a0 WHERE (a0."aircraft_code" = 'CN1') []
+  :
+  : {1, nil}
+
   Вы можете указать и какое-нибудь более сложное условие. Давайте, например,
   удалим информацию о самолетах с дальностью полета более 10000 км, а также с
   дальностью полета менее 3000 км:
