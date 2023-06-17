@@ -613,6 +613,27 @@
   #+RESULTS:
   : DELETE 2
 
+  #+BEGIN_SRC elixir :eval no :exports both
+    # keyword example
+    query =
+      from a in "aircrafts",
+      where: a.range > 10000 or a.range < 3000
+
+    query
+    |> Repo.delete_all()
+
+    # expression example
+    "aircrafts"
+    |> where([a], a.range > 10000 or a.range < 3000)
+    |> Repo.delete_all()
+  #+END_SRC
+
+  #+RESULTS:
+  : 14:03:41.612 [debug] QUERY OK source="aircrafts" db=4.5ms queue=0.5ms idle=39.0ms
+  : DELETE FROM "aircrafts" AS a0 WHERE ((a0."range" > 10000) OR (a0."range" < 3000)) []
+  :
+  : {2, nil}
+
   При необходимости удаления всех строк из таблицы команда будет совсем простой:
 
   #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
