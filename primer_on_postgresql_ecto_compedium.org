@@ -952,6 +952,29 @@
   | SU9           |     6 |
   | 773           |     6 |
 
+  #+BEGIN_SRC elixir :eval no :exports both
+    # keyword example
+    query =
+      from s in "seats",
+        group_by: s.aircraft_code,
+        select: [s.aircraft_code, count()]
+
+    query
+    |> Repo.all()
+
+    # expression example
+    "seats"
+    |> group_by([s], s.aircraft_code)
+    |> select([s], [s.aircraft_code, count()])
+    |> Repo.all()
+  #+END_SRC
+
+  #+RESULTS:
+  : 14:33:18.428 [debug] QUERY OK source="seats" db=0.4ms queue=0.5ms idle=14.9ms
+  : SELECT s0."aircraft_code", count(*) FROM "seats" AS s0 GROUP BY s0."aircraft_code" []
+  :
+  : [["SU9", 6]]
+
   Если мы захотим отсортировать выборку по числу мест в самолетах, то нужно
   будет дополнить команду предложением ~ORDER BY~, которое обеспечит сортировку
   результирующих строк по значениям второго столбца.
