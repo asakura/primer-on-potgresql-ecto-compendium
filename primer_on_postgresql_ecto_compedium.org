@@ -826,6 +826,39 @@
   : INSERT 0 6
   : INSERT 0 6
 
+  #+BEGIN_SRC elixir :eval no :exports both
+    Seat
+    |> Repo.insert_all([
+      %{aircraft_code: "SU9", seat_no: "1A", fare_conditions: "Business"},
+      %{aircraft_code: "SU9", seat_no: "2B", fare_conditions: "Business"},
+      %{aircraft_code: "SU9", seat_no: "10A", fare_conditions: "Economy"},
+      %{aircraft_code: "SU9", seat_no: "10B", fare_conditions: "Economy"},
+      %{aircraft_code: "SU9", seat_no: "10F", fare_conditions: "Economy"},
+      %{aircraft_code: "SU9", seat_no: "20F", fare_conditions: "Economy"}
+    ])
+
+    Seat
+    |> Repo.insert_all([
+      %{aircraft_code: "773", seat_no: "1A", fare_conditions: "Business"},
+      %{aircraft_code: "773", seat_no: "2B", fare_conditions: "Business"},
+      %{aircraft_code: "773", seat_no: "10A", fare_conditions: "Economy"},
+      %{aircraft_code: "773", seat_no: "10B", fare_conditions: "Economy"},
+      %{aircraft_code: "773", seat_no: "10F", fare_conditions: "Economy"},
+      %{aircraft_code: "773", seat_no: "20F", fare_conditions: "Economy"}
+    ])
+  #+END_SRC
+
+  #+RESULTS:
+  : 14:28:52.521 [debug] QUERY OK db=4.5ms queue=0.6ms idle=11.6ms
+  : INSERT INTO "seats" ("aircraft_code","fare_conditions","seat_no") VALUES ($1,$2,$3),($4,$5,$6),($7,$8,$9),($10,$11,$12),($13,$14,$15),($16,$17,$18) ["SU9", "Business", "1A", "SU9", "Business", "2B", "SU9", "Economy", "10A", "SU9", "Economy", "10B", "SU9", "Economy", "10F", "SU9", "Economy", "20F"]
+  :
+  : {6, nil}
+  :
+  : 14:28:52.601 [debug] QUERY OK db=4.5ms queue=0.6ms idle=11.6ms
+  : INSERT INTO "seats" ("aircraft_code","fare_conditions","seat_no") VALUES ($1,$2,$3),($4,$5,$6),($7,$8,$9),($10,$11,$12),($13,$14,$15),($16,$17,$18) ["773", "Business", "1A", "773", "Business", "2B", "773", "Economy", "10A", "773", "Economy", "10B", "773", "Economy", "10F", "773", "Economy", "20F"]
+  :
+  : {6, nil}
+
   Теперь решим еще одну задачу. Предположим, что нам нужно получить информацию о
   количестве мест в салонах для всех типов самолетов. Конечно, для решения
   задачи, поставленной выше, в принципе можно воспользоваться такими командами:
