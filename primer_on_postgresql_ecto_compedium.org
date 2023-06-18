@@ -679,3 +679,143 @@
   сама СУБД, называются *каскадным удалением*. Таким образом, внешний ключ
   служит для связи таблиц между собой.
 
+  Итак, команда для создания нашей второй таблицы «Места» такова:
+
+  #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+    CREATE TABLE seats(
+      aircraft_code char(3) NOT NULL,
+      seat_no varchar(4) NOT NULL,
+      fare_conditions varchar(10) NOT NULL,
+      CHECK (fare_conditions IN ('Economy','Comfort','Business')),
+      PRIMARY KEY (aircraft_code, seat_no),
+      FOREIGN KEY (aircraft_code) REFERENCES aircrafts (aircraft_code) ON DELETE CASCADE
+    );
+  #+END_SRC
+
+  #+RESULTS:
+  : CREATE TABLE
+  Проверим таблицу, которую создала СУБД:
+
+  #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  \a
+  \d seats
+  #+END_SRC
+
+  #+RESULTS:
+  #+begin_example
+                             Table "public.seats"
+       Column      |         Type          | Collation | Nullable | Default
+  -----------------+-----------------------+-----------+----------+---------
+   aircraft_code   | character(3)          |           | not null |
+   seat_no         | character varying(4)  |           | not null |
+   fare_conditions | character varying(10) |           | not null |
+  Indexes:
+      "seats_pkey" PRIMARY KEY, btree (aircraft_code, seat_no)
+  Check constraints:
+      "seats_fare_conditions_check" CHECK (fare_conditions::text = ANY (ARRAY['Economy'::text, 'Comfort'::text, 'Business'::text]))
+  Foreign-key constraints:
+      "seats_aircraft_code_fkey" FOREIGN KEY (aircraft_code) REFERENCES aircrafts(aircraft_code) ON DELETE CASCADE
+
+  #+end_example
+
+  Принципиально новым по сравнению с рассмотренной выше таблицей ~aircrafts~
+  является наличие ограничения внешнего ключа. Это ограничение имеет имя
+  ~seats_aircraft_code_fkey~, сгенерированное самой СУБД. Давайте сразу же
+  проделаем эксперимент, позволяющий показать работу внешнего ключа. Выполните
+  следующую команду для ввода данных в таблицу ~seats~:
+
+  #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+    INSERT INTO seats VALUES ('123', '1A', 'Business');
+  #+END_SRC
+
+  #+RESULTS:
+  : ERROR:  insert or update on table "seats" violates foreign key constraint "seats_aircraft_code_fkey"
+  : DETAIL:  Key (aircraft_code)=(123) is not present in table "aircrafts".
+  Теперь нужно заполнить данными таблицу ~seats~.
+
+  #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+    INSERT INTO seats VALUES
+      ('SU9', '1A', 'Business'),
+      ('SU9', '1B', 'Business'),
+      ('SU9', '10A', 'Economy'),
+      ('SU9', '10B', 'Economy'),
+      ('SU9', '10F', 'Economy'),
+      ('SU9', '20F', 'Economy');
+
+    INSERT INTO seats VALUES
+      ('773', '1A', 'Business'),
+      ('773', '1B', 'Business'),
+      ('773', '10A', 'Economy'),
+      ('773', '10B', 'Economy'),
+      ('773', '10F', 'Economy'),
+      ('773', '20F', 'Economy');
+  #+END_SRC
+
+  #+RESULTS:
+  : INSERT 0 6
+  : INSERT 0 6
+
+  Теперь решим еще одну задачу. Предположим, что нам нужно получить информацию о
+  количестве мест в салонах для всех типов самолетов. Конечно, для решения
+  задачи, поставленной выше, в принципе можно воспользоваться такими командами:
+
+  #+BEGIN_SRC sql :engine postgres :exports both :eval no
+    SELECT count(*)
+      FROM seats
+     WHERE aircraft_code = 'SU9';
+  #+END_SRC
+
+  #+RESULTS:
+  | count |
+  |-------|
+  |     6 |
+
+  И похожими для всех остальных самолетов:
+
+  #+BEGIN_SRC sql :engine postgres :exports both :eval no
+    SELECT count(*)
+      FROM seats
+     WHERE aircraft_code = 'CN1';
+  #+END_SRC
+
+  #+RESULTS:
+  | count |
+  |-------|
+  |     0 |
+
+  Очевидно, что это нерациональный подход. Язык SQL позволяет упростить решение
+  такой задачи за счет применения операции группирования строк на основе
+  некоторого критерия. В модифицированной команде вместо предложения ~WHERE~
+  будет добавлено предложение ~GROUP BY~, которое отвечает за группировку строк
+  с одинаковыми значениями атрибута ~aircraft_code~.
+
+  #+BEGIN_SRC sql :engine postgres :exports both :eval no
+    SELECT aircraft_code,
+           count(*)
+      FROM seats
+     GROUP BY aircraft_code;
+  #+END_SRC
+
+  #+RESULTS:
+  | aircraft_code | count |
+  |---------------+-------|
+  | SU9           |     6 |
+  | 773           |     6 |
+
+  Если мы захотим отсортировать выборку по числу мест в самолетах, то нужно
+  будет дополнить команду предложением ~ORDER BY~, которое обеспечит сортировку
+  результирующих строк по значениям второго столбца.
+
+  #+BEGIN_SRC sql :engine postgres :exports both :eval no
+    SELECT aircraft_code,
+           count(*)
+      FROM seats
+     GROUP BY aircraft_code
+     ORDER BY count;
+  #+END_SRC
+
+  #+RESULTS:
+  | aircraft_code | count |
+  |---------------+-------|
+  | SU9           |     6 |
+
