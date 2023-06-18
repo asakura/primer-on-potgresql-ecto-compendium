@@ -910,6 +910,29 @@
   |-------|
   |     0 |
 
+  #+BEGIN_SRC elixir :eval no :exports both
+    # keyword example
+    query =
+      from s in "seats",
+        where: s.aircraft_code == "CN1",
+        select: count()
+
+    query
+    |> Repo.all()
+
+    # expression example
+    "seats"
+    |> where([s], s.aircraft_code == "CN1")
+    |> select(count())
+    |> Repo.all()
+  #+END_SRC
+
+  #+RESULTS:
+  : 14:33:18.427 [debug] QUERY OK source="seats" db=0.5ms queue=0.7ms idle=13.5ms
+  : SELECT count(*) FROM "seats" AS s0 WHERE (s0."aircraft_code" = 'CN1') []
+  :
+  : [0]
+
   Очевидно, что это нерациональный подход. Язык SQL позволяет упростить решение
   такой задачи за счет применения операции группирования строк на основе
   некоторого критерия. В модифицированной команде вместо предложения ~WHERE~
