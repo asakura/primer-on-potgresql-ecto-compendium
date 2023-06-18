@@ -874,6 +874,29 @@
   |-------|
   |     6 |
 
+  #+BEGIN_SRC elixir :eval no :exports both
+    # keyword example
+    query =
+      from s in "seats",
+        where: s.aircraft_code == "SU9",
+        select: count()
+
+    query
+    |> Repo.all()
+
+    # expression example
+    "seats"
+    |> where([s], s.aircraft_code == "SU9")
+    |> select(count())
+    |> Repo.all()
+  #+END_SRC
+
+  #+RESULTS:
+  : 14:33:18.421 [debug] QUERY OK source="seats" db=0.3ms decode=0.4ms queue=0.5ms idle=3.0ms
+  : SELECT count(*) FROM "seats" AS s0 WHERE (s0."aircraft_code" = 'SU9') []
+  :
+  : [6]
+
   И похожими для всех остальных самолетов:
 
   #+BEGIN_SRC sql :engine postgres :exports both :eval no
