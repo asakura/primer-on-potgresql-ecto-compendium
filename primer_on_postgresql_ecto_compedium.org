@@ -775,6 +775,33 @@
   #+RESULTS:
   : ERROR:  insert or update on table "seats" violates foreign key constraint "seats_aircraft_code_fkey"
   : DETAIL:  Key (aircraft_code)=(123) is not present in table "aircrafts".
+
+  #+BEGIN_SRC elixir :eval no :exports both
+    %Seat{}
+    |> Seat.changeset(%{
+      aircraft_code: "123",
+      seat_no: "1A",
+      fare_conditions: "Business"
+    })
+    |> Repo.insert()
+  #+END_SRC
+
+  #+RESULTS:
+  : 14:28:52.511 [debug] QUERY ERROR db=2.7ms queue=9.1ms idle=0.0ms
+  : INSERT INTO "seats" ("aircraft_code","fare_conditions","seat_no") VALUES ($1,$2,$3) ["123", "Business", "1A"]
+  :
+  : {:error,
+  :  #Ecto.Changeset<
+  :    action: :insert,
+  :    changes: %{aircraft_code: "123", fare_conditions: "Business", seat_no: "1A"},
+  :    errors: [
+  :      aircraft_code: {"does not exist",
+  :       [constraint: :foreign, constraint_name: "seats_aircraft_code_fkey"]}
+  :    ],
+  :    data: #AirDB.Seat<>,
+  :    valid?: false
+  :  >}
+
   Теперь нужно заполнить данными таблицу ~seats~.
 
   #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
