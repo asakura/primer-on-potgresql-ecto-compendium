@@ -1017,3 +1017,24 @@
   :
   : [["SU9", 6]]
 
+  Теперь поставим более сложную задачу: подсчитать количество мест в салонах для
+  всех моделей самолетов, но теперь уже с учетом класса обслуживания
+  (бизнес-класс и экономический класс). В этом случае группировка выполняется
+  уже по двум атрибутам: ~aircraft_code~ и ~fare_conditions~. Отсортируем
+  выборку по тем же столбцам, по которым выполняли группировку.
+
+  #+BEGIN_SRC sql :engine postgres :exports both :eval no
+    SELECT aircraft_code,
+           fare_conditions,
+           count(*)
+      FROM seats
+     GROUP BY aircraft_code, fare_conditions
+     ORDER BY aircraft_code, fare_conditions;
+  #+END_SRC
+
+  #+RESULTS:
+  | aircraft_code | fare_conditions | count |
+  |---------------+-----------------+-------|
+  | SU9           | Business        |     2 |
+  | SU9           | Economy         |     4 |
+
