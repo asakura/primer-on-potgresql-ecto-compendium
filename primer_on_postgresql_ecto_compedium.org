@@ -992,3 +992,28 @@
   |---------------+-------|
   | SU9           |     6 |
 
+  #+BEGIN_SRC elixir :eval no :exports both
+    # keyword example
+    query =
+      from s in "seats",
+        group_by: s.aircraft_code,
+        order_by: fragment("count"),
+        select: [s.aircraft_code, count()]
+
+    query
+    |> Repo.all()
+
+    # expression example
+    "seats"
+    |> group_by([s], s.aircraft_code)
+    |> order_by(fragment("count"))
+    |> select([s], [s.aircraft_code, count()])
+    |> Repo.all()
+  #+END_SRC
+
+  #+RESULTS:
+  : 14:33:18.429 [debug] QUERY OK source="seats" db=0.4ms queue=0.6ms idle=16.1ms
+  : SELECT s0."aircraft_code", count(*) FROM "seats" AS s0 GROUP BY s0."aircraft_code" ORDER BY count []
+  :
+  : [["SU9", 6]]
+
