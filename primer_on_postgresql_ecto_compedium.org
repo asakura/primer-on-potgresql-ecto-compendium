@@ -10,735 +10,717 @@
 
 * Введение в базы данных и SQL
 ** Что такое базы данных
-   Одним из основных понятий в теории баз данных является *модель данных*. Можно
-   сказать, что она характеризует способ организации данных и основные методы
-   доступа к ним. В ходе эволюции теорий и идей была разработана реляционная
-   модель данных, которая сейчас и является доминирующей. Характерной чертой
-   реляционных баз данных является тот факт, что данные воспринимаются
-   пользователем как таблицы.
+Одним из основных понятий в теории баз данных является *модель данных*. Можно
+сказать, что она характеризует способ организации данных и основные методы
+доступа к ним. В ходе эволюции теорий и идей была разработана реляционная модель
+данных, которая сейчас и является доминирующей. Характерной чертой реляционных
+баз данных является тот факт, что данные воспринимаются пользователем как
+таблицы.
 
-   Одним из достоинств реляционной базы данных является ее способность
-   поддерживать связи между элементами данных, избавляя программиста от
-   необходимости заниматься этой рутинной и очень трудоемкой работой. Работая с
-   реляционными базами данных, программист избавлен от программирования на
-   «атомарном» уровне, потому что современные языки для «общения» с этими базами
-   данных являются декларативными.
+Одним из достоинств реляционной базы данных является ее способность поддерживать
+связи между элементами данных, избавляя программиста от необходимости заниматься
+этой рутинной и очень трудоемкой работой. Работая с реляционными базами данных,
+программист избавлен от программирования на «атомарном» уровне, потому что
+современные языки для «общения» с этими базами данных являются декларативными.
 
-   Система баз данных — это компьютеризированная система, предназначенная для
-   хранения, переработки и выдачи информации по запросу пользователей. Такая
-   система включает в себя программное и аппаратное обеспечение, сами данные, а
-   также пользователей.
+Система баз данных — это компьютеризированная система, предназначенная для
+хранения, переработки и выдачи информации по запросу пользователей. Такая
+система включает в себя программное и аппаратное обеспечение, сами данные, а
+также пользователей.
 
-   Современные системы баз данных являются, как правило, многопользовательскими.
-   В таких системах одновременный доступ к базе данных могут получить
-   сразу несколько пользователей.
+Современные системы баз данных являются, как правило, многопользовательскими. В
+таких системах одновременный доступ к базе данных могут получить сразу несколько
+пользователей.
 
-   Основным программным обеспечением является система управления базами данных.
-   По-английски она называется /database management system/ (DBMS). Кроме СУБД в
-   систему баз данных могут входить утилиты, средства для разработки приложений
-   (программ), средства проектирования базы данных, генераторы отчетов и др.
+Основным программным обеспечением является система управления базами данных.
+По-английски она называется /database management system/ (DBMS). Кроме СУБД в
+систему баз данных могут входить утилиты, средства для разработки приложений
+(программ), средства проектирования базы данных, генераторы отчетов и др.
 
-   Пользователи систем с базами данных подразделяются на ряд категорий. Первая
-   категория — это прикладные программисты. Вторая категория — это конечные
-   пользователи, ради которых и выполняется вся работа. Они могут получить
-   доступ к базе данных, используя прикладные программы или универсальные
-   приложения, которые входят в программное обеспечение самой СУБД. Третья
-   категория пользователей — это администраторы базы данных. В их обязанности
-   входят: создание базы данных, выбор оптимальных режимов доступа к ней,
-   разграничение полномочий различных пользователей на доступ к той или иной
-   информации в базе данных, выполнение резервного копирования базы данных и
-   т.д.
+Пользователи систем с базами данных подразделяются на ряд категорий. Первая
+категория — это прикладные программисты. Вторая категория — это конечные
+пользователи, ради которых и выполняется вся работа. Они могут получить доступ к
+базе данных, используя прикладные программы или универсальные приложения,
+которые входят в программное обеспечение самой СУБД. Третья категория
+пользователей — это администраторы базы данных. В их обязанности входят:
+создание базы данных, выбор оптимальных режимов доступа к ней, разграничение
+полномочий различных пользователей на доступ к той или иной информации в базе
+данных, выполнение резервного копирования базы данных и т.д.
 
-   Систему баз данных можно разделить на два главных компонента: сервер и
-   набор клиентов (или внешних интерфейсов). Сервер — это и есть СУБД. Один
-   сервер может обслуживать много клиентов.
+Систему баз данных можно разделить на два главных компонента: сервер и набор
+клиентов (или внешних интерфейсов). Сервер — это и есть СУБД. Один сервер может
+обслуживать много клиентов.
 
-   Современные СУБД включают в себя словарь данных. Это часть базы данных,
-   которая описывает сами данные, хранящиеся в ней. Словарь данных помогает СУБД
-   выполнять свои функции.
+Современные СУБД включают в себя словарь данных. Это часть базы данных, которая
+описывает сами данные, хранящиеся в ней. Словарь данных помогает СУБД выполнять
+свои функции.
 ** Основные понятия реляционной модели
-   В эпоху, предшествующую рождению реляционной теории, базы данных традиционно
-   рассматривались как набор *файлов*, состоящих из *записей*, а записи, в свою
-   очередь, подразделялись на отдельные *поля*. Поле являлось элементарной
-   единицей данных.
+В эпоху, предшествующую рождению реляционной теории, базы данных традиционно
+рассматривались как набор *файлов*, состоящих из *записей*, а записи, в свою
+очередь, подразделялись на отдельные *поля*. Поле являлось элементарной единицей
+данных.
 
-   В реляционных базах данных пользователь воспринимает данные в виде таблиц.
-   Поэтому термину «файл» соответствует термин *«таблица»*, вместо термина
-   «запись» используется термин *«строка»*, а вместо термина «поле» —
-   термин *«столбец»* (или *«колонка»*).
+В реляционных базах данных пользователь воспринимает данные в виде таблиц.
+Поэтому термину «файл» соответствует термин *«таблица»*, вместо термина «запись»
+используется термин *«строка»*, а вместо термина «поле» — термин *«столбец»*
+(или *«колонка»*).
 
-   В формальной теории реляционных баз данных эти таблицы называют *отношениями*
-   (*relations*) — поэтому и базы данных называются реляционными. Отношение —
-   это математический термин. При определении свойств таких отношений
-   используется теория множеств. В терминах данной теории строки таблицы будут
-   называться *кортежами* (*tuples*), а колонки — *атрибутами*. Отношение имеет
-   заголовок, который состоит из атрибутов, и тело, состоящее из кортежей.
-   Количество атрибутов называется *степенью отношения*, а количество кортежей
-   — *кардинальным числом*. Кроме теории множеств, одним из оснований реляционной
-   теории является такой раздел математической логики, как исчисление предикатов.
+В формальной теории реляционных баз данных эти таблицы называют *отношениями*
+(*relations*) — поэтому и базы данных называются реляционными. Отношение — это
+математический термин. При определении свойств таких отношений используется
+теория множеств. В терминах данной теории строки таблицы будут называться
+*кортежами* (*tuples*), а колонки — *атрибутами*. Отношение имеет заголовок,
+который состоит из атрибутов, и тело, состоящее из кортежей. Количество
+атрибутов называется *степенью отношения*, а количество кортежей — *кардинальным
+числом*. Кроме теории множеств, одним из оснований реляционной теории является
+такой раздел математической логики, как исчисление предикатов.
 
-   При работе с базами данных часто приходится следовать
-   *различнымограничениям*, которые могут быть обусловлены спецификой конкретной
-   предметной области.
+При работе с базами данных часто приходится следовать *различным ограничениям*,
+которые могут быть обусловлены спецификой конкретной предметной области.
 
-   Для идентификации строк в таблицах и для связи таблиц между собой
-   используются так называемые ключи. *Потенциальный ключ* — это комбинация
-   атрибутов таблицы, позволяющая уникальным образом идентифицировать строки в
-   ней. Ключ может состоять только лишь из одного атрибута таблицы.
-   Потенциальный ключ должен быть неизбыточным, т.е. никакое подмножество
-   атрибутов, входящих в него, не должно обладать свойством уникальности. Ключ,
-   состоящий из нескольких атрибутов называется составным.
+Для идентификации строк в таблицах и для связи таблиц между собой используются
+так называемые ключи. *Потенциальный ключ* — это комбинация атрибутов таблицы,
+позволяющая уникальным образом идентифицировать строки в ней. Ключ может
+состоять только лишь из одного атрибута таблицы. Потенциальный ключ должен быть
+*неизбыточным*, т.е. никакое подмножество атрибутов, входящих в него, не должно
+обладать свойством уникальности. Ключ, состоящий из нескольких атрибутов
+называется *составным*.
 
-   Ключи нужны для адресации на уровне строк (записей). При наличии в таблице
-   более одного потенциального ключа один из них выбирается в качестве так
-   называемого *первичного ключа*, а остальные будут являться *альтернативными
-   ключами*.
+Ключи нужны для адресации на уровне строк (записей). При наличии в таблице более
+одного потенциального ключа один из них выбирается в качестве так называемого
+*первичного ключа*, а остальные будут являться *альтернативными ключами*.
 
-   *Внешним ключ* - это ключ, используемый для объединения двух таблиц. Таблица,
-   содержащая внешний ключ, называется *ссылающейся* таблицей (*referencing
-   table*). Таблица, содержащая соответствующий потенциальный ключ, называется
-   *ссылочной* (*целевой*) таблицей (referenced table). В таких случаях говорят,
-   что внешний ключ ссылается на потенциальный ключ в ссылочной таблице. Внешний
-   ключ может быть составным, т.е. может включать более одного атрибута. Внешний
-   ключ не обязан быть уникальным.
+*Внешним ключ* - это ключ, используемый для объединения двух таблиц. Таблица,
+содержащая внешний ключ, называется *ссылающейся* таблицей (*referencing
+table*). Таблица, содержащая соответствующий потенциальный ключ, называется
+*ссылочной* (*целевой*) таблицей (*referenced table*). В таких случаях говорят,
+что внешний ключ ссылается на потенциальный ключ в ссылочной таблице. Внешний
+ключ может быть составным, т.е. может включать более одного атрибута. Внешний
+ключ не обязан быть уникальным.
 
-   Проблема обеспечения того, чтобы база данных не содержала неверных значений
-   внешних ключей, известна как проблема *ссылочной целостности*. Ограничение,
-   согласно которому значения внешних ключей должны соответствовать значениям
-   потенциальных ключей, называется *ограничением ссылочной целостности*
-   (*ссылочным ограничением*).
+Проблема обеспечения того, чтобы база данных не содержала неверных значений
+внешних ключей, известна как проблема *ссылочной целостности*. Ограничение,
+согласно которому значения внешних ключей должны соответствовать значениям
+потенциальных ключей, называется *ограничением ссылочной целостности*
+(*ссылочным ограничением*).
 
-   Обеспечением выполнения ограничений ссылочной целостности занимается СУБД, а
-   от разработчика требуется лишь указать атрибуты, служащие в качестве внешних
-   ключей. При проектировании баз данных часто предусматривается, что при
-   удалении строки из ссылочной таблицы соответствующие строки из ссылающейся
-   таблицы должны быть также удалены, а при изменении значения столбца, на
-   который ссылается внешний ключ, должны быть изменены значения внешнего ключа
-   в ссылающейся таблице. Этот подход называется *каскадным удалением*
-   (*обновлением*).
+Обеспечением выполнения ограничений ссылочной целостности занимается СУБД, а от
+разработчика требуется лишь указать атрибуты, служащие в качестве внешних
+ключей. При проектировании баз данных часто предусматривается, что при удалении
+строки из ссылочной таблицы соответствующие строки из ссылающейся таблицы должны
+быть также удалены, а при изменении значения столбца, на который ссылается
+внешний ключ, должны быть изменены значения внешнего ключа в ссылающейся
+таблице. Этот подход называется *каскадным удалением* (*обновлением*).
 
-   Иногда применяются и другие подходы. Например, вместо удаления строк из
-   ссылающейся таблицы в этих строках просто заменяют значения атрибутов,
-   входящих во внешний ключ, так называемыми *NULL*-значениями. Первичные ключи
-   не могут содержать NULL-значений.
+Иногда применяются и другие подходы. Например, вместо удаления строк из
+ссылающейся таблицы в этих строках просто заменяют значения атрибутов, входящих
+во внешний ключ, так называемыми *NULL*-значениями. Первичные ключи не могут
+содержать NULL-значений.
 
-   *Транзакция* — одно из важнейших понятий теории баз данных. Она означает
-   набор операций над базой данных, рассматриваемых как единая и неделимая
-   единица работы, выполняемая полностью или не выполняемая вовсе, если
-   произошел какойто сбой в процессе выполнения транзакции. Таким образом,
-   транзакции являются *средством обеспечения согласованности данных*.
+*Транзакция* — одно из важнейших понятий теории баз данных. Она означает набор
+операций над базой данных, рассматриваемых как единая и неделимая единица
+работы, выполняемая полностью или не выполняемая вовсе, если произошел какойто
+сбой в процессе выполнения транзакции. Таким образом, транзакции являются
+*средством обеспечения согласованности данных*.
 ** Что такое язык SQL
-   Язык SQL — это непроцедурный язык, который является стандартным средством
-   работы с данными во всех реляционных СУБД. *Операторы* (*команды*),
-   написанные на этом языке, лишь указывают СУБД, какой результат должен быть
-   получен, но не описывают процедуру получения этого результата. СУБД сама
-   определяет способ выполнения команды пользователя. В языке SQL традиционно
-   выделяются группа операторов определения данных (Data Definition Language —
-   DDL), группа операторов манипулирования данными (Data Manipulation Language —
-   DML) и группа операторов, управляющих привилегиями доступа к объектам базы
-   данных (Data Control Language — DCL).
-** Контрольные вопросы и задания
-*** Вопрос 1
-    Какие группы операторов выделяются в составе языка SQL?
-
-    ОТВЕТ:
-    - DDL - data definition language
-    - DML - data manipulation language
-    - DCL - data control language
+Язык SQL — это непроцедурный язык, который является стандартным средством работы
+с данными во всех реляционных СУБД. *Операторы* (*команды*), написанные на этом
+языке, лишь указывают СУБД, какой результат должен быть получен, но не описывают
+процедуру получения этого результата. СУБД сама определяет способ выполнения
+команды пользователя. В языке SQL традиционно выделяются группа операторов
+определения данных (*Data Definition Language* — *DDL*), группа операторов
+манипулирования данными (*Data Manipulation Language* — *DML*) и группа
+операторов, управляющих привилегиями доступа к объектам базы данных (*Data
+Control Language* — *DCL*).
 * Основные операции с таблицами
-  Для создания таблиц в языке SQL служит команда ~CREATE TABLE~. Итак, команда
-  для создания нашей первой таблицы ~aircrafts~ такова:
+Для создания таблиц в языке SQL служит команда ~CREATE TABLE~. Итак, команда для
+создания нашей первой таблицы ~aircrafts~ такова:
 
-  #+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
-    CREATE TABLE aircrafts(
-      aircraft_code char(3) NOT NULL,
-      model text NOT NULL,
-      range integer NOT NULL,
-      CHECK (range > 0),
-      PRIMARY KEY (aircraft_code)
-    );
-  #+END_SRC
+#+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
+  CREATE TABLE aircrafts(
+    aircraft_code char(3) NOT NULL,
+    model text NOT NULL,
+    range integer NOT NULL,
+    CHECK (range > 0),
+    PRIMARY KEY (aircraft_code)
+  );
+#+END_SRC
 
-  #+RESULTS:
-  : CREATE TABLE
+#+RESULTS:
+: CREATE TABLE
 
-  #+BEGIN_SRC elixir :eval no
-    defmodule AirDB.Repo.Migrations.AddsAircraftsTable do
-      use Ecto.Migration
+#+BEGIN_SRC elixir :eval no
+  defmodule AirDB.Repo.Migrations.AddsAircraftsTable do
+    use Ecto.Migration
 
-      def change do
-        create table(:aircrafts, primary_key: false, comment: "Aircrafts") do
-          add :aircraft_code, :char, size: 3, primary_key: true, comment: "Aircraft code, IATA"
-          add :model, :text, null: false, comment: "Aircraft model"
-          add :range, :integer, null: false, comment: "Maximal flying distance, km"
-        end
-
-        create constraint(:aircrafts, "aircrafts_range_check", check: "range > 0", comment: "range should be greater than 0")
+    def change do
+      create table(:aircrafts, primary_key: false, comment: "Aircrafts") do
+        add :aircraft_code, :char, size: 3, primary_key: true, comment: "Aircraft code, IATA"
+        add :model, :text, null: false, comment: "Aircraft model"
+        add :range, :integer, null: false, comment: "Maximal flying distance, km"
       end
+
+      create constraint(:aircrafts, "aircrafts_range_check", check: "range > 0", comment: "range should be greater than 0")
     end
+  end
 
-    defmodule AirDB.Aircraft do
-      use Ecto.Schema
-      import Ecto.Changeset
-      alias AirDB.Seat
+  defmodule AirDB.Aircraft do
+    use Ecto.Schema
+    import Ecto.Changeset
+    alias AirDB.Seat
 
-      @primary_key false
-      schema "aircrafts" do
-        field :aircraft_code, :string, primary_key: true
-        field :model, :string
-        field :range, :integer
+    @primary_key false
+    schema "aircrafts" do
+      field :aircraft_code, :string, primary_key: true
+      field :model, :string
+      field :range, :integer
 
-        has_many :seats, Seat,
-          foreign_key: :aircraft_code,
-          references: :aircraft_code,
-          on_replace: :mark_as_invalid
-      end
+      has_many :seats, Seat,
+        foreign_key: :aircraft_code,
+        references: :aircraft_code,
+        on_replace: :mark_as_invalid
     end
-  #+END_SRC
-
-  Значения всех атрибутов каждой строки данной таблицы должны быть
-  определенными, поэтому на них накладывается ограничение ~NOT NULL~. В
-  принципе в таблицах базы данных могут содержаться неопределенные значения
-  некоторых атрибутов. Говоря другими словами, их значения могут отсутствовать.
-  В таких случаях в этих полях содержится специальное значение ~NULL~.
-
-  К томуже атрибут ~range~ не должен принимать отрицательных значений и нулевого
-  значения, поэтому приходится добавить еще одно ограничение: ~range > 0~.
-
-  В качестве первичного ключа выбран атрибут ~aircraft_code~. Таким образом,
-  первичный ключ будет, как говорят, *естественным*. Это означает, что и в
-  реальной предметной области существует такое понятие, как код самолета, и это
-  понятие используется на практике. В отличие от естественных ключей иногда
-  используются и так называемые *суррогатные ключи*.
-
-  Проверим таблицу, которую создала СУБД:
-
-  #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
-  \a
-  \d aircrafts
-  #+END_SRC
-
-  #+RESULTS:
-  #+begin_example
-                     Table "public.aircrafts"
-      Column     |     Type     | Collation | Nullable | Default
-  ---------------+--------------+-----------+----------+---------
-   aircraft_code | character(3) |           | not null |
-   model         | text         |           | not null |
-   range         | integer      |           | not null |
-  Indexes:
-      "aircrafts_pkey" PRIMARY KEY, btree (aircraft_code)
-  Check constraints:
-      "aircrafts_range_check" CHECK (range > 0)
-  Referenced by:
-      TABLE "flights" CONSTRAINT "flights_aircraft_code_fkey" FOREIGN KEY (aircraft_code) REFERENCES aircrafts(aircraft_code)
-      TABLE "seats" CONSTRAINT "seats_aircraft_code_fkey" FOREIGN KEY (aircraft_code) REFERENCES aircrafts(aircraft_code) ON DELETE CASCADE
-
-  #+end_example
-
-  Для в вода данных в таблицу служит команда ~INSERT~. Давайте добавим одну
-  строку в таблицу ~aircrafts~.
-
-  #+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
-    INSERT INTO aircrafts (aircraft_code, model, range)
-      VALUES ('SU9', 'Sukhoi SuperJet-100', 3000);
-  #+END_SRC
-
-  #+RESULTS:
-  : INSERT 0 1
-
-  #+BEGIN_SRC elixir :eval no :exports both
-    %Aircraft{}
-    |> Aircraft.changeset(%{
-      aircraft_code: "SU9",
-      model: "Sukhoi SuperJet-100",
-      range: 3000
-    })
-    |> Repo.insert()
-  #+END_SRC
-
-  #+RESULTS:
-  : 13:37:23.184 [debug] QUERY OK db=10.7ms decode=0.6ms queue=8.0ms idle=0.0ms
-  : INSERT INTO "aircrafts" ("aircraft_code","model","range") VALUES ($1,$2,$3) ["SU9", "Sukhoi SuperJet-100", 3000]
-  :
-  : {:ok,
-  :  %AirDB.Aircraft{
-  :    __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-  :    aircraft_code: "SU9",
-  :    model: "Sukhoi SuperJet-100",
-  :    range: 3000,
-  :    seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-  :  }}
-
-  Давайте добавим еще несколько строк в таблицу ~aircrafts~. Команда ~INSERT~
-  позволяет сделать это за один раз.
-
-  #+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
-    INSERT INTO aircrafts (aircraft_code, model, range)
-      VALUES ('773', 'Boeing 777-300', 11100),
-             ('763', 'Boeing 767-300', 7900),
-             ('733', 'Boeing 737-300', 4200),
-             ('320', 'Airbus A320-200', 5700),
-             ('321', 'Airbus A321-200', 5600),
-             ('319', 'Airbus A319-100', 6700),
-             ('CN1', 'Cessna 208 Caravan', 1200),
-             ('CR2', 'Bombardier CRJ-200', 2700);
-  #+END_SRC
-
-  #+RESULTS:
-  : INSERT 0 8
-
-  #+BEGIN_SRC elixir :exports both :eval no
-    Aircraft
-    |> Repo.insert_all([
-      %{aircraft_code: "773", model: "Boeing 777-300", range: 11100},
-      %{aircraft_code: "763", model: "Boeing 767-300", range: 7900},
-      %{aircraft_code: "733", model: "Boeing 737-300", range: 4200},
-      %{aircraft_code: "320", model: "Airbus A320-200", range: 5700},
-      %{aircraft_code: "321", model: "Airbus A321-200", range: 5600},
-      %{aircraft_code: "319", model: "Airbus A319-100", range: 6700},
-      %{aircraft_code: "CN1", model: "Cessna 208 Caravan", range: 1200},
-      %{aircraft_code: "CR2", model: "Bombardier CRJ-200", range: 2700}
-    ])
-  #+END_SRC
-
-  #+RESULTS:
-  : 13:37:23.199 [debug] QUERY OK db=3.4ms queue=0.5ms idle=28.0ms
-  : INSERT INTO "aircrafts" ("aircraft_code","model","range") VALUES ($1,$2,$3),($4,$5,$6),($7,$8,$9),($10,$11,$12),($13,$14,$15),($16,$17,$18),($19,$20,$21),($22,$23,$24) ["773", "Boeing 777-300", 11100, "763", "Boeing 767-300", 7900, "733", "Boeing 737-300", 4200, "320", "Airbus A320-200", 5700, "321", "Airbus A321-200", 5600, "319", "Airbus A319-100", 6700, "CN1", "Cessna 208 Caravan", 1200, "CR2", "Bombardier CRJ-200", 2700]
-  :
-  : {8, nil}
-
-  Давайте посмотрим, что содержится в таблице ~aircrafts~. Для этого служит
-  команда ~SELECT~.
-
-  #+BEGIN_SRC sql :engine postgres :exports both :eval no
-    SELECT * FROM aircrafts;
-  #+END_SRC
-
-  #+RESULTS:
-  | aircraft_code | model               | range |
-  |---------------+---------------------+-------|
-  |           SU9 | Sukhoi SuperJet-100 |  3000 |
-  |           773 | Boeing 777-300      | 11100 |
-  |           763 | Boeing 767-300      |  7900 |
-  |           733 | Boeing 737-300      |  4200 |
-  |           320 | Airbus A320-200     |  5700 |
-  |           321 | Airbus A321-200     |  5600 |
-  |           319 | Airbus A319-100     |  6700 |
-  |           CN1 | Cessna 208 Caravan  |  1200 |
-  |           CR2 | Bombardier CRJ-200  |  2700 |
-
-  #+BEGIN_SRC elixir :exports both :eval no
-    Repo.all(Aircraft)
-  #+END_SRC
-
-  #+RESULTS:
-  : 13:42:28.202 [debug] QUERY OK source="aircrafts" db=0.3ms decode=0.5ms queue=0.6ms idle=2.3ms
-  : SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 []
-  :
-  : [
-  :   %AirDB.Aircraft{
-  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-  :     aircraft_code: "SU9",
-  :     model: "Sukhoi SuperJet-100",
-  :     range: 3000,
-  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-  :   },
-  :   %AirDB.Aircraft{
-  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-  :     aircraft_code: "773",
-  :     model: "Boeing 777-300",
-  :     range: 11100,
-  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-  :   },
-  :   %AirDB.Aircraft{
-  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-  :     aircraft_code: "763",
-  :     model: "Boeing 767-300",
-  :     range: 7900,
-  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-  :   },
-  :   %AirDB.Aircraft{
-  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-  :     aircraft_code: "733",
-  :     model: "Boeing 737-300",
-  :     range: 4200,
-  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-  :   },
-  :   %AirDB.Aircraft{
-  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-  :     aircraft_code: "320",
-  :     model: "Airbus A320-200",
-  :     range: 5700,
-  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-  :   },
-  :   %AirDB.Aircraft{
-  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-  :     aircraft_code: "321",
-  :     model: "Airbus A321-200",
-  :     range: 5600,
-  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-  :   },
-  :   %AirDB.Aircraft{
-  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-  :     aircraft_code: "319",
-  :     model: "Airbus A319-100",
-  :     range: 6700,
-  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-  :   },
-  :   %AirDB.Aircraft{
-  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-  :     aircraft_code: "CN1",
-  :     model: "Cessna 208 Caravan",
-  :     range: 1200,
-  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-  :   },
-  :   %AirDB.Aircraft{
-  :     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-  :     aircraft_code: "CR2",
-  :     model: "Bombardier CRJ-200",
-  :     range: 2700,
-  :     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-  :   }
-  : ]
-
-  Давайте упорядочим строки по значению атрибута ~model~, а заодно изменим
-  порядок расположения столбцов в выводе информации.
-
-  #+BEGIN_SRC sql :engine postgres :exports both :eval no
-    SELECT model, aircraft_code, range FROM aircrafts ORDER BY model;
-  #+END_SRC
-
-  #+RESULTS:
-  | model               | aircraft_code | range |
-  |---------------------+---------------+-------|
-  | Airbus A319-100     |           319 |  6700 |
-  | Airbus A320-200     |           320 |  5700 |
-  | Airbus A321-200     |           321 |  5600 |
-  | Boeing 737-300      |           733 |  4200 |
-  | Boeing 767-300      |           763 |  7900 |
-  | Boeing 777-300      |           773 | 11100 |
-  | Bombardier CRJ-200  |           CR2 |  2700 |
-  | Cessna 208 Caravan  |           CN1 |  1200 |
-  | Sukhoi SuperJet-100 |           SU9 |  3000 |
-
-  #+BEGIN_SRC elixir :eval no :exports both
-    # keyword example
-    query =
-      from a in "aircrafts",
-        order_by: a.model,
-        select: [a.aircraft_code, a.model, a.range]
-
-    query
-    |> Repo.all()
-
-    # exspression example
-    "aircrafts"
-    |> order_by([a], asc: a.model)
-    |> select([a], [a.aircraft_code, a.model, a.range])
-    |> Repo.all()
-  #+END_SRC
-
-  #+RESULTS:
-  : 13:42:28.211 [debug] QUERY OK source="aircrafts" db=0.4ms queue=0.8ms idle=16.5ms
-  : SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 ORDER BY a0."model" []
-  :
-  : [
-  :   ["319", "Airbus A319-100", 6700],
-  :   ["320", "Airbus A320-200", 5700],
-  :   ["321", "Airbus A321-200", 5600],
-  :   ["733", "Boeing 737-300", 4200],
-  :   ["763", "Boeing 767-300", 7900],
-  :   ["773", "Boeing 777-300", 11100],
-  :   ["CR2", "Bombardier CRJ-200", 2700],
-  :   ["CN1", "Cessna 208 Caravan", 1200],
-  :   ["SU9", "Sukhoi SuperJet-100", 3000]
-  : ]
-
-  Множество выбираемых строк можно ограничить с помощью предложения ~WHERE~
-  команды ~SELECT~. Давайте выберем модели самолетов, у которых максимальная
-  дальность полета находитсяв пределах от 4 до 6 тыс. км включительно. Условие
-  выбора строк может быть составным. В данном случае нужно скомбинировать два
-  ограничения с помощью логической операции ~AND~.
-
-  #+BEGIN_SRC sql :engine postgres :exports both :eval no
-    SELECT model, aircraft_code, range
-      FROM aircrafts
-     WHERE range >= 4000 AND range <= 6000;
-  #+END_SRC
-
-  #+RESULTS:
-  | model           | aircraft_code | range |
-  |-----------------+---------------+-------|
-  | Boeing 737-300  |           733 |  4200 |
-  | Airbus A320-200 |           320 |  5700 |
-  | Airbus A321-200 |           321 |  5600 |
-
-  #+BEGIN_SRC elixir :eval no :exports both
-    # keyword example
-    query =
-      from a in "aircrafts",
-        where: a.range >= 4000 and a.range <= 6000,
-        select: [a.aircraft_code, a.model, a.range]
-
-    query
-    |> Repo.all()
-
-    # expression example
-    "aircrafts"
-    |> where([a], a.range >= 4000 and a.range <= 6000)
-    |> select([a], [a.aircraft_code, a.model, a.range])
-    |> Repo.all()
-  #+END_SRC
-
-  #+RESULTS:
-  : 13:42:28.212 [debug] QUERY OK source="aircrafts" db=0.2ms queue=0.4ms idle=18.1ms
-  : SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 WHERE ((a0."range" >= 4000) AND (a0."range" <= 6000)) []
-  :
-  : [
-  :   ["733", "Boeing 737-300", 4200],
-  :   ["320", "Airbus A320-200", 5700],
-  :   ["321", "Airbus A321-200", 5600]
-  : ]
-
-  Команда ~UPDATE~ предназначенна для обновления данных в таблицах. Условие,
-  указываемое в команде, должно ограничить диапазон обновляемых строк. Если это
-  условие не задать, то будут обновлены все строки в таблице.
-
-  Давайте предположим, что российские инженеры немного улучшили летные
-  характеристики самолета /Sukhoi SuperJet/, и теперь дальность его полета стала
-  на 500 км больше.
-
-  #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
-    UPDATE aircrafts SET range = 3500 WHERE aircraft_code = 'SU9';
-  #+END_SRC
-
-  #+RESULTS:
-  : UPDATE 1
-
-  #+BEGIN_SRC elixir :eval no :exports both
-    # keyword example
-    query =
-      from a in "aircrafts",
-        where: a.aircraft_code == "SU9"
-
-    query
-    |> Repo.update_all(set: [range: 3500])
-
-    # expression example
-    "aircrafts"
-    |> where([a], a.aircraft_code == "SU9")
-    |> Repo.update_all(set: [range: 3500])
-  #+END_SRC
-
-  #+RESULTS:
-  : 13:42:28.219 [debug] QUERY OK source="aircrafts" db=5.5ms queue=0.5ms idle=19.7ms
-  : UPDATE "aircrafts" AS a0 SET "range" = $1 WHERE (a0."aircraft_code" = 'SU9') [3500]
-  :
-  : {1, nil}
-
-  Давайте проверим, что получилось в результате обновления данных.
-
-  #+BEGIN_SRC sql :engine postgres :exports both :eval no
-    SELECT * FROM aircrafts WHERE aircraft_code = 'SU9';
-  #+END_SRC
-
-  #+RESULTS:
-  | aircraft_code | model               | range |
-  |---------------+---------------------+-------|
-  | SU9           | Sukhoi SuperJet-100 |  3500 |
-
-  #+BEGIN_SRC elixir :eval no :exports both
-    # keyword example
-    query =
-      from a in "aircrafts",
-        where: a.aircraft_code == "SU9",
-        select: [a.aircraft_code, a.model, a.range]
-
-    query
-    |> Repo.all()
-
-    # expression example
-    "aircrafts"
-    |> where([a], a.aircraft_code == "SU9")
-    |> select([a], [a.aircraft_code, a.model, a.range])
-    |> Repo.all()
-  #+END_SRC
-
-  #+RESULTS:
-  : 13:42:28.221 [debug] QUERY OK source="aircrafts" db=0.4ms queue=0.6ms idle=26.8ms
-  : SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 WHERE (a0."aircraft_code" = 'SU9') []
-  :
-  : [["SU9", "Sukhoi SuperJet-100", 3500]]
-
-  Для удаления строк из таблиц используется команда ~DELETE~, которая похожа на
-  команду ~SELECT~. Удалим какую-нибудь одну строку из таблицы ~aircrafts~:
-
-  #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
-    DELETE FROM aircrafts WHERE aircraft_code = 'CN1';
-  #+END_SRC
-
-  #+RESULTS:
-  : DELETE 1
-
-  #+BEGIN_SRC elixir :eval no :exports both
-    # keyword example
-    query =
-      from a in "aircrafts",
-        where: a.aircraft_code == "CN1"
-
-    query
-    |> Repo.delete_all()
-
-    # expression example
-    "aircrafts"
-    |> where([a], a.aircraft_code == "CN1")
-    |> Repo.delete_all()
-  #+END_SRC
-
-  #+RESULTS:
-  : 13:42:28.226 [debug] QUERY OK source="aircrafts" db=4.2ms queue=0.4ms idle=28.0ms
-  : DELETE FROM "aircrafts" AS a0 WHERE (a0."aircraft_code" = 'CN1') []
-  :
-  : {1, nil}
-
-  Вы можете указать и какое-нибудь более сложное условие. Давайте, например,
-  удалим информацию о самолетах с дальностью полета более 10000 км, а также с
-  дальностью полета менее 3000 км:
-
-  #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
-    DELETE FROM aircrafts WHERE range > 10000 OR range < 3000;
-  #+END_SRC
-
-  #+RESULTS:
-  : DELETE 2
-
-  #+BEGIN_SRC elixir :eval no :exports both
-    # keyword example
-    query =
-      from a in "aircrafts",
-      where: a.range > 10000 or a.range < 3000
-
-    query
-    |> Repo.delete_all()
-
-    # expression example
-    "aircrafts"
-    |> where([a], a.range > 10000 or a.range < 3000)
-    |> Repo.delete_all()
-  #+END_SRC
-
-  #+RESULTS:
-  : 14:03:41.612 [debug] QUERY OK source="aircrafts" db=4.5ms queue=0.5ms idle=39.0ms
-  : DELETE FROM "aircrafts" AS a0 WHERE ((a0."range" > 10000) OR (a0."range" < 3000)) []
-  :
-  : {2, nil}
-
-  При необходимости удаления всех строк из таблицы команда будет совсем простой:
-
-  #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
-    DELETE FROM aircrafts;
-  #+END_SRC
-
-  #+RESULTS:
-  : DELETE 6
-
-  #+BEGIN_SRC elixir :eval no :exports both
-    Repo.delete_all("aircrafts")
-  #+END_SRC
-
-  #+RESULTS:
-  : 13:42:28.233 [debug] QUERY OK source="aircrafts" db=5.4ms queue=0.5ms idle=33.6ms
-  : DELETE FROM "aircrafts" AS a0 []
-
-  Теперь в таблице ~aircrafts~ нет ни одной строки. Для продолжения работы
-  необходимо эти данные восстановить.
-
-  В нашей учебной базе данных содержится несколько таблиц, связанных между
-  собой. Для таблицы ~aircrafts~ ближайшей «родственницей» является таблица
-  ~seats~.
-
-  Значения атрибута ~fare_conditions~ могут выбираться из ограниченного списка
-  значений. Проверка на соответствие вводимых значений этому списку будет
-  обеспечиваться с помощью ограничения ~CHECK~.
-
-  В этой таблице используется *внешний ключ*. Предложение ~FOREIGN KEY~ создает
-  ограничение ссылочной целостности. В качестве внешнего ключа служит атрибут
-  ~aircraft_code~. Он ссылается на одноименный атрибут в таблице ~aircrafts~.
-  Таблица ~seats~ называется ссылающейся (referencing), а таблица ~aircrafts~ —
-  ссылочной (referenced).
-
-  Поскольку номера мест привязаны к модели самолета, то в случае удаления из
-  таблицы ~aircrafts~ какой-либо строки с конкретным кодом самолета необходимо
-  удалить также и из таблицы ~seats~ все строки, в которых значение атрибута
-  ~aircraft_code~ такое же. Поэтому в предложении для определения внешнего ключа
-  появляется важное дополнение: ~ON DELETE CASCADE~. Это означает, что при
-  удалении какой-либо строки из таблицы ~aircrafts~ удаление строк из таблицы
-  ~seats~, связанных с этой строкой по внешнему ключу, берет на себя СУБД,
-  избавляя программиста от этой заботы. Подобные действия, которые выполняет
-  сама СУБД, называются *каскадным удалением*. Таким образом, внешний ключ
-  служит для связи таблиц между собой.
-
-  Итак, команда для создания нашей второй таблицы «Места» такова:
-
-  #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
-    CREATE TABLE seats(
-      aircraft_code char(3) NOT NULL,
-      seat_no varchar(4) NOT NULL,
-      fare_conditions varchar(10) NOT NULL,
-      CHECK (fare_conditions IN ('Economy','Comfort','Business')),
-      PRIMARY KEY (aircraft_code, seat_no),
-      FOREIGN KEY (aircraft_code) REFERENCES aircrafts (aircraft_code) ON DELETE CASCADE
-    );
-  #+END_SRC
-
-  #+RESULTS:
-  : CREATE TABLE
-
-  #+BEGIN_SRC elixir :eval no
-    defmodule AirDB.Repo.Migrations.AddsSeatsTable do
-      use Ecto.Migration
-
-      def change do
-        create table(:seats, primary_key: false, comment: "Seats") do
-          add :aircraft_code,
-            references(:aircrafts, column: :aircraft_code, type: :char, on_delete: :delete_all),
-            size: 3,
-            primary_key: true,
-            comment: "Aircraft code, IATA"
-
-          add :seat_no, :varchar, size: 4, primary_key: true, comment: "Seat number"
-          add :fare_conditions, :varchar, size: 10, null: false, comment: "Travel class"
-        end
-
-        create constraint(
-          :seats,
-          "seats_fare_conditions_check",
-          check: "fare_conditions = ANY(ARRAY['Economy', 'Comfort', 'Business'])"
-        )
-      end
-    end
-
-    defmodule AirDB.Seat do
-      use Ecto.Schema
-      import Ecto.Changeset
-      alias AirDB.Aircraft
-
-      @primary_key false
-      schema "seats" do
-        belongs_to :aircraft, Aircraft,
+  end
+#+END_SRC
+
+Значения всех атрибутов каждой строки данной таблицы должны быть определенными,
+поэтому на них накладывается ограничение ~NOT NULL~. В принципе в таблицах базы
+данных могут содержаться неопределенные значения некоторых атрибутов. Говоря
+другими словами, их значения могут отсутствовать. В таких случаях в этих полях
+содержится специальное значение ~NULL~.
+
+К томуже атрибут ~range~ не должен принимать отрицательных значений и нулевого
+значения, поэтому приходится добавить еще одно ограничение: ~range > 0~.
+
+В качестве первичного ключа выбран атрибут ~aircraft_code~. Таким образом,
+первичный ключ будет, как говорят, *естественным*. Это означает, что и в
+реальной предметной области существует такое понятие, как код самолета, и это
+понятие используется на практике. В отличие от естественных ключей иногда
+используются и так называемые *суррогатные ключи*.
+
+Проверим таблицу, которую создала СУБД:
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+\a
+\d aircrafts
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+                   Table "public.aircrafts"
+    Column     |     Type     | Collation | Nullable | Default
+---------------+--------------+-----------+----------+---------
+ aircraft_code | character(3) |           | not null |
+ model         | text         |           | not null |
+ range         | integer      |           | not null |
+Indexes:
+    "aircrafts_pkey" PRIMARY KEY, btree (aircraft_code)
+Check constraints:
+    "aircrafts_range_check" CHECK (range > 0)
+Referenced by:
+    TABLE "flights" CONSTRAINT "flights_aircraft_code_fkey" FOREIGN KEY (aircraft_code) REFERENCES aircrafts(aircraft_code)
+    TABLE "seats" CONSTRAINT "seats_aircraft_code_fkey" FOREIGN KEY (aircraft_code) REFERENCES aircrafts(aircraft_code) ON DELETE CASCADE
+
+#+end_example
+
+Для в вода данных в таблицу служит команда ~INSERT~. Давайте добавим одну строку
+в таблицу ~aircrafts~.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
+  INSERT INTO aircrafts (aircraft_code, model, range) VALUES ('SU9', 'Sukhoi SuperJet-100', 3000);
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+
+#+BEGIN_SRC elixir :eval no :exports both
+  %Aircraft{}
+  |> Aircraft.changeset(%{
+    aircraft_code: "SU9",
+    model: "Sukhoi SuperJet-100",
+    range: 3000
+  })
+  |> Repo.insert()
+#+END_SRC
+
+#+RESULTS:
+: 13:37:23.184 [debug] QUERY OK db=10.7ms decode=0.6ms queue=8.0ms idle=0.0ms
+: INSERT INTO "aircrafts" ("aircraft_code","model","range") VALUES ($1,$2,$3) ["SU9", "Sukhoi SuperJet-100", 3000]
+:
+: {:ok,
+:  %AirDB.Aircraft{
+:    __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+:    aircraft_code: "SU9",
+:    model: "Sukhoi SuperJet-100",
+:    range: 3000,
+:    seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+:  }}
+
+Давайте добавим еще несколько строк в таблицу ~aircrafts~. Команда ~INSERT~
+позволяет сделать это за один раз.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
+  INSERT INTO aircrafts (aircraft_code, model, range)
+    VALUES ('773', 'Boeing 777-300', 11100),
+           ('763', 'Boeing 767-300', 7900),
+           ('733', 'Boeing 737-300', 4200),
+           ('320', 'Airbus A320-200', 5700),
+           ('321', 'Airbus A321-200', 5600),
+           ('319', 'Airbus A319-100', 6700),
+           ('CN1', 'Cessna 208 Caravan', 1200),
+           ('CR2', 'Bombardier CRJ-200', 2700);
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 8
+
+#+BEGIN_SRC elixir :exports both :eval no
+  Repo.insert_all(Aircraft, [
+    %{aircraft_code: "773", model: "Boeing 777-300", range: 11100},
+    %{aircraft_code: "763", model: "Boeing 767-300", range: 7900},
+    %{aircraft_code: "733", model: "Boeing 737-300", range: 4200},
+    %{aircraft_code: "320", model: "Airbus A320-200", range: 5700},
+    %{aircraft_code: "321", model: "Airbus A321-200", range: 5600},
+    %{aircraft_code: "319", model: "Airbus A319-100", range: 6700},
+    %{aircraft_code: "CN1", model: "Cessna 208 Caravan", range: 1200},
+    %{aircraft_code: "CR2", model: "Bombardier CRJ-200", range: 2700}
+  ])
+#+END_SRC
+
+#+RESULTS:
+: 13:37:23.199 [debug] QUERY OK db=3.4ms queue=0.5ms idle=28.0ms
+: INSERT INTO "aircrafts" ("aircraft_code","model","range") VALUES ($1,$2,$3),($4,$5,$6),($7,$8,$9),($10,$11,$12),($13,$14,$15),($16,$17,$18),($19,$20,$21),($22,$23,$24) ["773", "Boeing 777-300", 11100, "763", "Boeing 767-300", 7900, "733", "Boeing 737-300", 4200, "320", "Airbus A320-200", 5700, "321", "Airbus A321-200", 5600, "319", "Airbus A319-100", 6700, "CN1", "Cessna 208 Caravan", 1200, "CR2", "Bombardier CRJ-200", 2700]
+:
+: {8, nil}
+
+Давайте посмотрим, что содержится в таблице ~aircrafts~. Для этого служит
+команда ~SELECT~.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT * FROM aircrafts;
+#+END_SRC
+
+#+RESULTS:
+| aircraft_code | model               | range |
+|---------------+---------------------+-------|
+|           SU9 | Sukhoi SuperJet-100 |  3000 |
+|           773 | Boeing 777-300      | 11100 |
+|           763 | Boeing 767-300      |  7900 |
+|           733 | Boeing 737-300      |  4200 |
+|           320 | Airbus A320-200     |  5700 |
+|           321 | Airbus A321-200     |  5600 |
+|           319 | Airbus A319-100     |  6700 |
+|           CN1 | Cessna 208 Caravan  |  1200 |
+|           CR2 | Bombardier CRJ-200  |  2700 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  Repo.all(Aircraft)
+#+END_SRC
+
+#+RESULTS:
+: 13:42:28.202 [debug] QUERY OK source="aircrafts" db=0.3ms decode=0.5ms queue=0.6ms idle=2.3ms
+: SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 []
+:
+: [
+:   %AirDB.Aircraft{
+:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+:     aircraft_code: "SU9",
+:     model: "Sukhoi SuperJet-100",
+:     range: 3000,
+:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+:   },
+:   %AirDB.Aircraft{
+:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+:     aircraft_code: "773",
+:     model: "Boeing 777-300",
+:     range: 11100,
+:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+:   },
+:   %AirDB.Aircraft{
+:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+:     aircraft_code: "763",
+:     model: "Boeing 767-300",
+:     range: 7900,
+:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+:   },
+:   %AirDB.Aircraft{
+:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+:     aircraft_code: "733",
+:     model: "Boeing 737-300",
+:     range: 4200,
+:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+:   },
+:   %AirDB.Aircraft{
+:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+:     aircraft_code: "320",
+:     model: "Airbus A320-200",
+:     range: 5700,
+:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+:   },
+:   %AirDB.Aircraft{
+:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+:     aircraft_code: "321",
+:     model: "Airbus A321-200",
+:     range: 5600,
+:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+:   },
+:   %AirDB.Aircraft{
+:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+:     aircraft_code: "319",
+:     model: "Airbus A319-100",
+:     range: 6700,
+:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+:   },
+:   %AirDB.Aircraft{
+:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+:     aircraft_code: "CN1",
+:     model: "Cessna 208 Caravan",
+:     range: 1200,
+:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+:   },
+:   %AirDB.Aircraft{
+:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
+:     aircraft_code: "CR2",
+:     model: "Bombardier CRJ-200",
+:     range: 2700,
+:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
+:   }
+: ]
+
+Давайте упорядочим строки по значению атрибута ~model~, а заодно изменим порядок
+расположения столбцов в выводе информации.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT model, aircraft_code, range FROM aircrafts ORDER BY model;
+#+END_SRC
+
+#+RESULTS:
+| model               | aircraft_code | range |
+|---------------------+---------------+-------|
+| Airbus A319-100     |           319 |  6700 |
+| Airbus A320-200     |           320 |  5700 |
+| Airbus A321-200     |           321 |  5600 |
+| Boeing 737-300      |           733 |  4200 |
+| Boeing 767-300      |           763 |  7900 |
+| Boeing 777-300      |           773 | 11100 |
+| Bombardier CRJ-200  |           CR2 |  2700 |
+| Cessna 208 Caravan  |           CN1 |  1200 |
+| Sukhoi SuperJet-100 |           SU9 |  3000 |
+
+#+BEGIN_SRC elixir :eval no :exports both
+  # keyword example
+  query =
+    from a in "aircrafts",
+      order_by: [asc: a.model],
+      select: [a.aircraft_code, a.model, a.range]
+
+  query
+  |> Repo.all()
+
+  # macro example
+  "aircrafts"
+  |> order_by([a], asc: a.model)
+  |> select([a], [a.aircraft_code, a.model, a.range])
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 13:42:28.211 [debug] QUERY OK source="aircrafts" db=0.4ms queue=0.8ms idle=16.5ms
+: SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 ORDER BY a0."model" []
+:
+: [
+:   ["319", "Airbus A319-100", 6700],
+:   ["320", "Airbus A320-200", 5700],
+:   ["321", "Airbus A321-200", 5600],
+:   ["733", "Boeing 737-300", 4200],
+:   ["763", "Boeing 767-300", 7900],
+:   ["773", "Boeing 777-300", 11100],
+:   ["CR2", "Bombardier CRJ-200", 2700],
+:   ["CN1", "Cessna 208 Caravan", 1200],
+:   ["SU9", "Sukhoi SuperJet-100", 3000]
+: ]
+
+Множество выбираемых строк можно ограничить с помощью предложения ~WHERE~
+команды ~SELECT~. Давайте выберем модели самолетов, у которых максимальная
+дальность полета находитсяв пределах от 4 до 6 тыс. км включительно. Условие
+выбора строк может быть составным. В данном случае нужно скомбинировать два
+ограничения с помощью логической операции ~AND~.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT model, aircraft_code, range
+    FROM aircrafts
+   WHERE range >= 4000 AND range <= 6000;
+#+END_SRC
+
+#+RESULTS:
+| model           | aircraft_code | range |
+|-----------------+---------------+-------|
+| Boeing 737-300  |           733 |  4200 |
+| Airbus A320-200 |           320 |  5700 |
+| Airbus A321-200 |           321 |  5600 |
+
+#+BEGIN_SRC elixir :eval no :exports both
+  # keyword example
+  query =
+    from a in "aircrafts",
+      where: a.range >= 4000 and a.range <= 6000,
+      select: [a.aircraft_code, a.model, a.range]
+
+  query
+  |> Repo.all()
+
+  # macro example
+  "aircrafts"
+  |> where([a], a.range >= 4000 and a.range <= 6000)
+  |> select([a], [a.aircraft_code, a.model, a.range])
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 13:42:28.212 [debug] QUERY OK source="aircrafts" db=0.2ms queue=0.4ms idle=18.1ms
+: SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 WHERE ((a0."range" >= 4000) AND (a0."range" <= 6000)) []
+:
+: [
+:   ["733", "Boeing 737-300", 4200],
+:   ["320", "Airbus A320-200", 5700],
+:   ["321", "Airbus A321-200", 5600]
+: ]
+
+Команда ~UPDATE~ предназначенна для обновления данных в таблицах. Условие,
+указываемое в команде, должно ограничить диапазон обновляемых строк. Если это
+условие не задать, то будут обновлены все строки в таблице.
+
+Давайте предположим, что российские инженеры немного улучшили летные
+характеристики самолета /Sukhoi SuperJet/, и теперь дальность его полета стала
+на 500 км больше.
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  UPDATE aircrafts SET range = 3500 WHERE aircraft_code = 'SU9';
+#+END_SRC
+
+#+RESULTS:
+: UPDATE 1
+
+#+BEGIN_SRC elixir :eval no :exports both
+  # keyword example
+  query =
+    from a in "aircrafts",
+      where: a.aircraft_code == "SU9"
+
+  query
+  |> Repo.update_all(set: [range: 3500])
+
+  # macro example
+  "aircrafts"
+  |> where([a], a.aircraft_code == "SU9")
+  |> Repo.update_all(set: [range: 3500])
+#+END_SRC
+
+#+RESULTS:
+: 13:42:28.219 [debug] QUERY OK source="aircrafts" db=5.5ms queue=0.5ms idle=19.7ms
+: UPDATE "aircrafts" AS a0 SET "range" = $1 WHERE (a0."aircraft_code" = 'SU9') [3500]
+:
+: {1, nil}
+
+Давайте проверим, что получилось в результате обновления данных.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT * FROM aircrafts WHERE aircraft_code = 'SU9';
+#+END_SRC
+
+#+RESULTS:
+| aircraft_code | model               | range |
+|---------------+---------------------+-------|
+| SU9           | Sukhoi SuperJet-100 |  3500 |
+
+#+BEGIN_SRC elixir :eval no :exports both
+  # keyword example
+  query =
+    from a in "aircrafts",
+      where: a.aircraft_code == "SU9",
+      select: [a.aircraft_code, a.model, a.range]
+
+  query
+  |> Repo.all()
+
+  # macro example
+  "aircrafts"
+  |> where([a], a.aircraft_code == "SU9")
+  |> select([a], [a.aircraft_code, a.model, a.range])
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 13:42:28.221 [debug] QUERY OK source="aircrafts" db=0.4ms queue=0.6ms idle=26.8ms
+: SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 WHERE (a0."aircraft_code" = 'SU9') []
+:
+: [["SU9", "Sukhoi SuperJet-100", 3500]]
+
+Для удаления строк из таблиц используется команда ~DELETE~, которая похожа на
+команду ~SELECT~. Удалим какую-нибудь одну строку из таблицы ~aircrafts~:
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  DELETE FROM aircrafts WHERE aircraft_code = 'CN1';
+#+END_SRC
+
+#+RESULTS:
+: DELETE 1
+
+#+BEGIN_SRC elixir :eval no :exports both
+  # keyword example
+  query =
+    from a in "aircrafts",
+      where: a.aircraft_code == "CN1"
+
+  query
+  |> Repo.delete_all()
+
+  # macro example
+  "aircrafts"
+  |> where([a], a.aircraft_code == "CN1")
+  |> Repo.delete_all()
+#+END_SRC
+
+#+RESULTS:
+: 13:42:28.226 [debug] QUERY OK source="aircrafts" db=4.2ms queue=0.4ms idle=28.0ms
+: DELETE FROM "aircrafts" AS a0 WHERE (a0."aircraft_code" = 'CN1') []
+:
+: {1, nil}
+
+Вы можете указать и какое-нибудь более сложное условие. Давайте, например,
+удалим информацию о самолетах с дальностью полета более 10000 км, а также с
+дальностью полета менее 3000 км:
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  DELETE FROM aircrafts WHERE range > 10000 OR range < 3000;
+#+END_SRC
+
+#+RESULTS:
+: DELETE 2
+
+#+BEGIN_SRC elixir :eval no :exports both
+  # keyword example
+  query =
+    from a in "aircrafts",
+    where: a.range > 10000 or a.range < 3000
+
+  query
+  |> Repo.delete_all()
+
+  # macro example
+  "aircrafts"
+  |> where([a], a.range > 10000 or a.range < 3000)
+  |> Repo.delete_all()
+#+END_SRC
+
+#+RESULTS:
+: 14:03:41.612 [debug] QUERY OK source="aircrafts" db=4.5ms queue=0.5ms idle=39.0ms
+: DELETE FROM "aircrafts" AS a0 WHERE ((a0."range" > 10000) OR (a0."range" < 3000)) []
+:
+: {2, nil}
+
+При необходимости удаления всех строк из таблицы команда будет совсем простой:
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  DELETE FROM aircrafts;
+#+END_SRC
+
+#+RESULTS:
+: DELETE 6
+
+#+BEGIN_SRC elixir :eval no :exports both
+  Repo.delete_all("aircrafts")
+#+END_SRC
+
+#+RESULTS:
+: 13:42:28.233 [debug] QUERY OK source="aircrafts" db=5.4ms queue=0.5ms idle=33.6ms
+: DELETE FROM "aircrafts" AS a0 []
+
+Теперь в таблице ~aircrafts~ нет ни одной строки.
+
+Для таблицы ~aircrafts~ ближайшей «родственницей» является таблица ~seats~.
+
+Значения атрибута ~fare_conditions~ могут выбираться из ограниченного списка
+значений. Проверка на соответствие вводимых значений этому списку будет
+обеспечиваться с помощью ограничения ~CHECK~.
+
+В этой таблице используется *внешний ключ*. Предложение ~FOREIGN KEY~ создает
+ограничение ссылочной целостности. В качестве внешнего ключа служит атрибут
+~aircraft_code~. Он ссылается на одноименный атрибут в таблице ~aircrafts~.
+Таблица ~seats~ называется *ссылающейся* (*referencing*), а таблица ~aircrafts~
+— *ссылочной* (*referenced*).
+
+Поскольку номера мест привязаны к модели самолета, то в случае удаления из
+таблицы ~aircrafts~ какой-либо строки с конкретным кодом самолета необходимо
+удалить также и из таблицы ~seats~ все строки, в которых значение атрибута
+~aircraft_code~ такое же. Поэтому в предложении для определения внешнего ключа
+появляется важное дополнение: ~ON DELETE CASCADE~. Это означает, что при
+удалении какой-либо строки из таблицы ~aircrafts~ удаление строк из таблицы
+~seats~, связанных с этой строкой по внешнему ключу, берет на себя СУБД,
+избавляя программиста от этой заботы. Подобные действия, которые выполняет сама
+СУБД, называются *каскадным удалением*. Таким образом, внешний ключ служит для
+связи таблиц между собой.
+
+Итак, команда для создания нашей второй таблицы ~seats~ такова:
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  CREATE TABLE seats(
+    aircraft_code char(3) NOT NULL,
+    seat_no varchar(4) NOT NULL,
+    fare_conditions varchar(10) NOT NULL,
+    CHECK (fare_conditions IN ('Economy', 'Comfort', 'Business')),
+    PRIMARY KEY (aircraft_code, seat_no),
+    FOREIGN KEY (aircraft_code) REFERENCES aircrafts (aircraft_code) ON DELETE CASCADE
+  );
+#+END_SRC
+
+#+RESULTS:
+: CREATE TABLE
+
+#+BEGIN_SRC elixir :eval no
+  defmodule AirDB.Repo.Migrations.AddsSeatsTable do
+    use Ecto.Migration
+
+    def change do
+      create table(:seats, primary_key: false, comment: "Seats") do
+        add :aircraft_code,
+          references(:aircrafts, column: :aircraft_code, type: :char, on_delete: :delete_all),
+          size: 3,
           primary_key: true,
-          foreign_key: :aircraft_code,
-          references: :aircraft_code,
-          type: :string
+          comment: "Aircraft code, IATA"
 
-        field :seat_no, :string, primary_key: true
-        field :fare_conditions, :string
+        add :seat_no, :varchar, size: 4, primary_key: true, comment: "Seat number"
+        add :fare_conditions, :varchar, size: 10, null: false, comment: "Travel class"
       end
-    end
-  #+END_SRC
 
-  Проверим таблицу, которую создала СУБД:
+      create constraint(
+        :seats,
+        "seats_fare_conditions_check",
+        check: "fare_conditions = ANY(ARRAY['Economy', 'Comfort', 'Business'])"
+      )
+    end
+  end
+
+  defmodule AirDB.Seat do
+    use Ecto.Schema
+    import Ecto.Changeset
+    alias AirDB.Aircraft
+
+    @primary_key false
+    schema "seats" do
+      belongs_to :aircraft, Aircraft,
+        primary_key: true,
+        foreign_key: :aircraft_code,
+        references: :aircraft_code,
+        type: :string
+
+      field :seat_no, :string, primary_key: true
+      field :fare_conditions, :string
+    end
+  end
+#+END_SRC
+
+Проверим таблицу, которую создала СУБД:
 
   #+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
   \a
