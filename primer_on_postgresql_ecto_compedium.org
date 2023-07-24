@@ -1549,6 +1549,159 @@ Boris добавим один день с помощью операции кон
 |            3 |
 |            6 |
 |            7 |
+** Типы JSON
+Типы JSON предназначены для сохранения в столбцах таблиц базы данных таких
+значений, которые представлены в формате /JSON/ (JavaScript Object Notation).
+Существует два типа: ~json~ и ~jsonb~. Основное различие между ними заключается
+в быстродействии. Если столбец имеет тип ~json~, тогда сохранение значений
+происходит быстрее, потому что они записываются в том виде, в котором были
+введены. Но при последующем использовании этих значений в качестве операндов или
+параметров функций будет каждый раз выполняться их разбор, что замедляет работу.
+При использовании типа ~jsonb~ разбор производится однократно, при записи
+значения в таблицу. Это несколько замедляет операции вставки строк, в которых
+содержатся значения данного типа. Но все последующие обращения к сохраненным
+значениям выполняются быстрее, т.к. выполнять их разбор уже не требуется.
+
+Есть еще ряд отличий, в частности, тип ~json~ сохраняет порядок следования
+ключей в объектах и повторяющиеся значения ключей, а тип ~jsonb~ этого не
+делает. Рекомендуется в приложениях использовать тип ~jsonb~, если только нет
+какихто особых аргументов в пользу выбора типа ~json~.
+
+Для иллюстрации использования типов JSON обратимся к тематике авиаперевозок.
+Разработчики базы данных авиакомпании получили задание создать специальную
+таблицу, в которую будут заноситься сведения о тех видах спорта, которыми
+занимается пилот, будет отмечаться наличие у него домашней библиотеки, а также
+фиксироваться количество стран, которые он посетил в ходе туристических поездок.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  CREATE TABLE pilot_hobbies(pilot_name text, hobbies jsonb);
+  INSERT INTO pilot_hobbies
+    VALUES ('Ivan',  '{"sports": ["футбол", "плавание"], "home_lib": true, "trips": 3}'::jsonb),
+           ('Petr',  '{"sports": ["теннис", "плавание"],"home_lib": true, "trips": 2}'::jsonb),
+           ('Pavel', '{"sports": ["плавание"], "home_lib": false, "trips": 4}'::jsonb),
+           ('Boris', '{"sports": ["футбол", "плавание", "теннис"],"home_lib": true, "trips": 0}'::jsonb);
+#+END_SRC
+
+#+RESULTS:
+: CREATE TABLE
+: INSERT 0 4
+
+Предположим, что нужно сформировать футбольную сборную команду нашей
+авиакомпании для участия в турнире. Мы можем выбрать всех футболистов таким
+способом:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT *
+    FROM pilot_hobbies
+   WHERE hobbies @> '{"sports": ["футбол"]}'::jsonb;
+#+END_SRC
+
+#+RESULTS:
+| pilot_name | hobbies                                                                    |
+|------------+----------------------------------------------------------------------------|
+| Ivan       | {"trips": 3, "sports": ["футбол", "плавание"], "home_lib": true}           |
+| Boris      | {"trips": 0, "sports": ["футбол", "плавание", "теннис"], "home_lib": true} |
+
+Можно было эту задачу решить и таким способом. Операция ~->~ служит для
+обращения к конкретному ключу JSON-объекта. В этом решении мы выводим только
+информацию о спортивных предпочтениях пилотов:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT pilot_name,
+         hobbies -> 'sports' AS sports
+    FROM pilot_hobbies
+   WHERE hobbies->'sports' @> '["футбол"]'::jsonb;
+#+END_SRC
+
+#+RESULTS:
+| pilot_name | sports                           |
+|------------+----------------------------------|
+| Ivan       | ["футбол", "плавание"]           |
+| Boris      | ["футбол", "плавание", "теннис"] |
+
+Как можно проверить наличие ключа? Продемонстрируем это:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT count(*)
+    FROM pilot_hobbies
+   WHERE hobbies ? 'sport';
+#+END_SRC
+
+#+RESULTS:
+| count |
+|-------|
+|     0 |
+
+А вот ключ ~sports~ присутствует. Выполним ту же проверку:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT count(*)
+    FROM pilot_hobbies
+   WHERE hobbies ? 'sports';
+#+END_SRC
+
+#+RESULTS:
+| count |
+|-------|
+|     4 |
+
+А как выполнять обновление JSON-объектов в строках таблицы? Предположим, что
+пилот по имени Boris решил посвятить себя только хоккею. Тогда в базе данных мы
+выполним такую операцию:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  UPDATE pilot_hobbies
+     SET hobbies = hobbies || '{"sports": ["хоккей"]}'
+   WHERE pilot_name = 'Boris';
+#+END_SRC
+
+#+RESULTS:
+: UPDATE 1
+
+#+BEGIN_SRC sql :engine postgres :exports results :eval no
+  SELECT pilot_name, hobbies
+    FROM pilot_hobbies
+   WHERE pilot_name = 'Boris';
+#+END_SRC
+
+Проверим, что получилось:
+
+#+RESULTS:
+| pilot_name | hobbies                                              |
+|------------+------------------------------------------------------|
+| Boris      | {"trips": 0, "sports": ["хоккей"], "home_lib": true} |
+
+Если впоследствии Boris захочет возобновить занятия футболом, то с помощью
+функции ~jsonb_set~ можно будет обновить сведения о нем в таблице:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  UPDATE pilot_hobbies
+     SET hobbies = jsonb_set(hobbies, '{sports, 1}', '"футбол"')
+   WHERE pilot_name = 'Boris';
+#+END_SRC
+
+#+RESULTS:
+: UPDATE 1
+
+Второй параметр функции указывает путь в пределах JSON-объекта, куда нужно
+добавить новое значение. В данном случае этот путь состоит из имени ключа
+(~sports~) и номера добавляемого элемента в массиве видов спорта (номер 1).
+Нумерация элементов начинается с нуля. Третий параметр имеет тип ~jsonb~,
+поэтому его литерал заключается в одинарные кавычки, а само добавляемое значение
+берется в двойные кавычки. В результате получается — ~'"футбол"'~.
+
+Проверим успешность выполнения этой операции:
+
+#+BEGIN_SRC sql :engine postgres :exports results :eval no
+  SELECT pilot_name, hobbies
+    FROM pilot_hobbies
+   WHERE pilot_name = 'Boris';
+#+END_SRC
+
+#+RESULTS:
+| pilot_name | hobbies                                                        |
+|------------+----------------------------------------------------------------|
+| Boris      | {"trips": 0, "sports": ["хоккей", "футбол"], "home_lib": true} |
 
    #+BEGIN_SRC sql :engine postgres :exports both :eval no
      SELECT 0.1::real * 10 = 1.0::real;
