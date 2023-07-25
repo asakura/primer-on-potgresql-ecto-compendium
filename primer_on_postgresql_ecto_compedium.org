@@ -200,19 +200,18 @@ Referenced by:
 : INSERT 0 1
 
 #+BEGIN_SRC elixir :eval no :exports both
-  %Aircraft{}
-  |> Aircraft.changeset(%{
+  %Aircraft{
     aircraft_code: "SU9",
     model: "Sukhoi SuperJet-100",
     range: 3000
-  })
+  }
   |> Repo.insert()
 #+END_SRC
 
 #+RESULTS:
-: 13:37:23.184 [debug] QUERY OK db=10.7ms decode=0.6ms queue=8.0ms idle=0.0ms
+: 14:40:54.810 [debug] QUERY OK db=13.8ms decode=0.5ms queue=0.3ms idle=1.5ms
 : INSERT INTO "aircrafts" ("aircraft_code","model","range") VALUES ($1,$2,$3) ["SU9", "Sukhoi SuperJet-100", 3000]
-:
+: >>> :
 : {:ok,
 :  %AirDB.Aircraft{
 :    __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
@@ -256,8 +255,7 @@ Referenced by:
 #+RESULTS:
 : 13:37:23.199 [debug] QUERY OK db=3.4ms queue=0.5ms idle=28.0ms
 : INSERT INTO "aircrafts" ("aircraft_code","model","range") VALUES ($1,$2,$3),($4,$5,$6),($7,$8,$9),($10,$11,$12),($13,$14,$15),($16,$17,$18),($19,$20,$21),($22,$23,$24) ["773", "Boeing 777-300", 11100, "763", "Boeing 767-300", 7900, "733", "Boeing 737-300", 4200, "320", "Airbus A320-200", 5700, "321", "Airbus A321-200", 5600, "319", "Airbus A319-100", 6700, "CN1", "Cessna 208 Caravan", 1200, "CR2", "Bombardier CRJ-200", 2700]
-:
-: {8, nil}
+: >>> : {8, nil}
 
 Давайте посмотрим, что содержится в таблице ~aircrafts~. Для этого служит
 команда ~SELECT~.
@@ -280,77 +278,24 @@ Referenced by:
 |           CR2 | Bombardier CRJ-200  |  2700 |
 
 #+BEGIN_SRC elixir :exports both :eval no
-  Repo.all(Aircraft)
+  select(Aircraft, [a], map(a, ^Aircraft.__schema__(:fields)))
+  |> Repo.all()
 #+END_SRC
 
 #+RESULTS:
-: 13:42:28.202 [debug] QUERY OK source="aircrafts" db=0.3ms decode=0.5ms queue=0.6ms idle=2.3ms
+: 15:10:47.010 [debug] QUERY OK source="aircrafts" db=0.2ms decode=0.5ms queue=0.3ms idle=7.5ms
 : SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 []
-:
+: >>> :
 : [
-:   %AirDB.Aircraft{
-:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-:     aircraft_code: "SU9",
-:     model: "Sukhoi SuperJet-100",
-:     range: 3000,
-:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-:   },
-:   %AirDB.Aircraft{
-:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-:     aircraft_code: "773",
-:     model: "Boeing 777-300",
-:     range: 11100,
-:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-:   },
-:   %AirDB.Aircraft{
-:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-:     aircraft_code: "763",
-:     model: "Boeing 767-300",
-:     range: 7900,
-:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-:   },
-:   %AirDB.Aircraft{
-:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-:     aircraft_code: "733",
-:     model: "Boeing 737-300",
-:     range: 4200,
-:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-:   },
-:   %AirDB.Aircraft{
-:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-:     aircraft_code: "320",
-:     model: "Airbus A320-200",
-:     range: 5700,
-:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-:   },
-:   %AirDB.Aircraft{
-:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-:     aircraft_code: "321",
-:     model: "Airbus A321-200",
-:     range: 5600,
-:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-:   },
-:   %AirDB.Aircraft{
-:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-:     aircraft_code: "319",
-:     model: "Airbus A319-100",
-:     range: 6700,
-:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-:   },
-:   %AirDB.Aircraft{
-:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-:     aircraft_code: "CN1",
-:     model: "Cessna 208 Caravan",
-:     range: 1200,
-:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-:   },
-:   %AirDB.Aircraft{
-:     __meta__: #Ecto.Schema.Metadata<:loaded, "aircrafts">,
-:     aircraft_code: "CR2",
-:     model: "Bombardier CRJ-200",
-:     range: 2700,
-:     seats: #Ecto.Association.NotLoaded<association :seats is not loaded>
-:   }
+:   %{aircraft_code: "SU9", model: "Sukhoi SuperJet-100", range: 3000},
+:   %{aircraft_code: "773", model: "Boeing 777-300", range: 11100},
+:   %{aircraft_code: "763", model: "Boeing 767-300", range: 7900},
+:   %{aircraft_code: "733", model: "Boeing 737-300", range: 4200},
+:   %{aircraft_code: "320", model: "Airbus A320-200", range: 5700},
+:   %{aircraft_code: "321", model: "Airbus A321-200", range: 5600},
+:   %{aircraft_code: "319", model: "Airbus A319-100", range: 6700},
+:   %{aircraft_code: "CN1", model: "Cessna 208 Caravan", range: 1200},
+:   %{aircraft_code: "CR2", model: "Bombardier CRJ-200", range: 2700}
 : ]
 
 Давайте упорядочим строки по значению атрибута ~model~, а заодно изменим порядок
