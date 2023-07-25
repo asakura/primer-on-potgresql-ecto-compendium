@@ -320,35 +320,31 @@ Referenced by:
 
 #+BEGIN_SRC elixir :eval no :exports both
   # keyword example
-  query =
-    from a in "aircrafts",
-      order_by: [asc: a.model],
-      select: [a.aircraft_code, a.model, a.range]
-
-  query
-  |> Repo.all()
+  from a in Aircraft,
+    order_by: a.model,
+    select: map(a, [:aircraft_code, :model, :range])
 
   # macro example
-  "aircrafts"
+  Aircraft
   |> order_by([a], asc: a.model)
-  |> select([a], [a.aircraft_code, a.model, a.range])
+  |> select([a], map(a, [:aircraft_code, :model, :range]))
   |> Repo.all()
 #+END_SRC
 
 #+RESULTS:
 : 13:42:28.211 [debug] QUERY OK source="aircrafts" db=0.4ms queue=0.8ms idle=16.5ms
 : SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 ORDER BY a0."model" []
-:
+: >>> :
 : [
-:   ["319", "Airbus A319-100", 6700],
-:   ["320", "Airbus A320-200", 5700],
-:   ["321", "Airbus A321-200", 5600],
-:   ["733", "Boeing 737-300", 4200],
-:   ["763", "Boeing 767-300", 7900],
-:   ["773", "Boeing 777-300", 11100],
-:   ["CR2", "Bombardier CRJ-200", 2700],
-:   ["CN1", "Cessna 208 Caravan", 1200],
-:   ["SU9", "Sukhoi SuperJet-100", 3000]
+:   %{aircraft_code: "319", model: "Airbus A319-100", range: 6700},
+:   %{aircraft_code: "320", model: "Airbus A320-200", range: 5700},
+:   %{aircraft_code: "321", model: "Airbus A321-200", range: 5600},
+:   %{aircraft_code: "733", model: "Boeing 737-300", range: 4200},
+:   %{aircraft_code: "763", model: "Boeing 767-300", range: 7900},
+:   %{aircraft_code: "773", model: "Boeing 777-300", range: 11100},
+:   %{aircraft_code: "CR2", model: "Bombardier CRJ-200", range: 2700},
+:   %{aircraft_code: "CN1", model: "Cessna 208 Caravan", range: 1200},
+:   %{aircraft_code: "SU9", model: "Sukhoi SuperJet-100", range: 3000}
 : ]
 
 Множество выбираемых строк можно ограничить с помощью предложения ~WHERE~
@@ -372,29 +368,25 @@ Referenced by:
 
 #+BEGIN_SRC elixir :eval no :exports both
   # keyword example
-  query =
-    from a in "aircrafts",
-      where: a.range >= 4000 and a.range <= 6000,
-      select: [a.aircraft_code, a.model, a.range]
-
-  query
-  |> Repo.all()
+  from a in Aircraft,
+    where: a.range >= 4000 and a.range <= 6000,
+    select: map(a, [:aircraft_code, :model, :range])
 
   # macro example
-  "aircrafts"
+  Aircraft
   |> where([a], a.range >= 4000 and a.range <= 6000)
-  |> select([a], [a.aircraft_code, a.model, a.range])
+  |> select([a], map(a, [:aircraft_code, :model, :range]))
   |> Repo.all()
 #+END_SRC
 
 #+RESULTS:
 : 13:42:28.212 [debug] QUERY OK source="aircrafts" db=0.2ms queue=0.4ms idle=18.1ms
 : SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 WHERE ((a0."range" >= 4000) AND (a0."range" <= 6000)) []
-:
+: >>> :
 : [
-:   ["733", "Boeing 737-300", 4200],
-:   ["320", "Airbus A320-200", 5700],
-:   ["321", "Airbus A321-200", 5600]
+:   %{aircraft_code: "733", model: "Boeing 737-300", range: 4200},
+:   %{aircraft_code: "320", model: "Airbus A320-200", range: 5700},
+:   %{aircraft_code: "321", model: "Airbus A321-200", range: 5600}
 : ]
 
 Команда ~UPDATE~ предназначенна для обновления данных в таблицах. Условие,
@@ -414,15 +406,11 @@ Referenced by:
 
 #+BEGIN_SRC elixir :eval no :exports both
   # keyword example
-  query =
-    from a in "aircrafts",
-      where: a.aircraft_code == "SU9"
-
-  query
-  |> Repo.update_all(set: [range: 3500])
+  from a in Aircraft,
+    where: a.aircraft_code == "SU9"
 
   # macro example
-  "aircrafts"
+  Aircraft
   |> where([a], a.aircraft_code == "SU9")
   |> Repo.update_all(set: [range: 3500])
 #+END_SRC
@@ -430,8 +418,7 @@ Referenced by:
 #+RESULTS:
 : 13:42:28.219 [debug] QUERY OK source="aircrafts" db=5.5ms queue=0.5ms idle=19.7ms
 : UPDATE "aircrafts" AS a0 SET "range" = $1 WHERE (a0."aircraft_code" = 'SU9') [3500]
-:
-: {1, nil}
+: >>> : {1, nil}
 
 Давайте проверим, что получилось в результате обновления данных.
 
