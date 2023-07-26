@@ -1001,6 +1001,19 @@ aircrafts~.
 
 #+RESULTS:
 : DELETE 0
+
+#+BEGIN_SRC elixir :exports both :eval no
+  query =
+    from a in Aircraft,
+      where: a.aircraft_code == "XXX"
+
+  Repo.delete_all(query)
+#+END_SRC
+
+#+RESULTS:
+: 16:49:32.082 [debug] QUERY OK source="aircrafts" db=0.4ms idle=1764.0ms
+: DELETE FROM "aircrafts" AS a0 WHERE (a0."aircraft_code" = 'XXX') []
+: >>> : {0, nil}
 * Типы данных СУБД PostgreSQL
 ** Числовые типы
 Группа числовых типов данных включает в себя целый ряд разновидностей:
