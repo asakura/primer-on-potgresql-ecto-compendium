@@ -968,6 +968,20 @@ aircrafts~.
 : UPDATE 1
 : range
 : 6000
+
+#+BEGIN_SRC elixir :exports both :eval no
+  query =
+    from a in Aircraft,
+      where: a.aircraft_code == "SU9",
+      update: [set: [range: fragment("range * 2")]]
+
+  Repo.update_all(query, [])
+#+END_SRC
+
+#+RESULTS:
+: 16:41:34.417 [debug] QUERY OK source="aircrafts" db=0.2ms queue=0.2ms idle=1098.1ms
+: UPDATE "aircrafts" AS a0 SET "range" = range * 2 WHERE (a0."aircraft_code" = 'SU9') []
+: >>> : {0, nil}
 *** Вопрос 4
 Если в предложении ~WHERE~ команды ~DELETE~ вы укажете логически и синтаксически
 корректное условие, но строк, удовлетворяющих этому условию, в таблице не
