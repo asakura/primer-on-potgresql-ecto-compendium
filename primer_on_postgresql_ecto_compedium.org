@@ -600,8 +600,7 @@ Foreign-key constraints:
 : DETAIL:  Key (aircraft_code)=(123) is not present in table "aircrafts".
 
 #+BEGIN_SRC elixir :eval no :exports both
-  %Seat{}
-  |> Seat.changeset(%{
+  Seat.changeset(%Seat{}, %{
     aircraft_code: "123",
     seat_no: "1A",
     fare_conditions: "Business"
@@ -612,7 +611,7 @@ Foreign-key constraints:
 #+RESULTS:
 : 14:28:52.511 [debug] QUERY ERROR db=2.7ms queue=9.1ms idle=0.0ms
 : INSERT INTO "seats" ("aircraft_code","fare_conditions","seat_no") VALUES ($1,$2,$3) ["123", "Business", "1A"]
-:
+: >>> :
 : {:error,
 :  #Ecto.Changeset<
 :    action: :insert,
@@ -658,7 +657,14 @@ Foreign-key constraints:
     %{aircraft_code: "SU9", seat_no: "10F", fare_conditions: "Economy"},
     %{aircraft_code: "SU9", seat_no: "20F", fare_conditions: "Economy"}
   ])
+#+END_SRC
 
+#+RESULTS:
+: 14:28:52.521 [debug] QUERY OK db=4.5ms queue=0.6ms idle=11.6ms
+: INSERT INTO "seats" ("aircraft_code","fare_conditions","seat_no") VALUES ($1,$2,$3),($4,$5,$6),($7,$8,$9),($10,$11,$12),($13,$14,$15),($16,$17,$18) ["SU9", "Business", "1A", "SU9", "Business", "2B", "SU9", "Economy", "10A", "SU9", "Economy", "10B", "SU9", "Economy", "10F", "SU9", "Economy", "20F"]
+: >>> : {6, nil}
+
+#+BEGIN_SRC elixir :eval no :exports both
   Repo.insert_all(Seat, [
     %{aircraft_code: "773", seat_no: "1A", fare_conditions: "Business"},
     %{aircraft_code: "773", seat_no: "2B", fare_conditions: "Business"},
@@ -670,15 +676,9 @@ Foreign-key constraints:
 #+END_SRC
 
 #+RESULTS:
-: 14:28:52.521 [debug] QUERY OK db=4.5ms queue=0.6ms idle=11.6ms
-: INSERT INTO "seats" ("aircraft_code","fare_conditions","seat_no") VALUES ($1,$2,$3),($4,$5,$6),($7,$8,$9),($10,$11,$12),($13,$14,$15),($16,$17,$18) ["SU9", "Business", "1A", "SU9", "Business", "2B", "SU9", "Economy", "10A", "SU9", "Economy", "10B", "SU9", "Economy", "10F", "SU9", "Economy", "20F"]
-:
-: {6, nil}
-:
 : 14:28:52.601 [debug] QUERY OK db=4.5ms queue=0.6ms idle=11.6ms
 : INSERT INTO "seats" ("aircraft_code","fare_conditions","seat_no") VALUES ($1,$2,$3),($4,$5,$6),($7,$8,$9),($10,$11,$12),($13,$14,$15),($16,$17,$18) ["773", "Business", "1A", "773", "Business", "2B", "773", "Economy", "10A", "773", "Economy", "10B", "773", "Economy", "10F", "773", "Economy", "20F"]
-:
-: {6, nil}
+: >>> : {6, nil}
 
 Теперь решим еще одну задачу. Предположим, что нам нужно получить информацию о
 количестве мест в салонах для всех типов самолетов. Конечно, для решения задачи,
@@ -697,26 +697,19 @@ Foreign-key constraints:
 
 #+BEGIN_SRC elixir :eval no :exports both
   # keyword example
-  query =
-    from s in "seats",
-      where: s.aircraft_code == "SU9",
-      select: count()
-
-  query
-  |> Repo.all()
+  from s in Seat,
+    where: s.aircraft_code == "SU9"
 
   # macro example
-  "seats"
+  Seat
   |> where([s], s.aircraft_code == "SU9")
-  |> select(count())
-  |> Repo.all()
+  |> Repo.aggregate(:count)
 #+END_SRC
 
 #+RESULTS:
 : 14:33:18.421 [debug] QUERY OK source="seats" db=0.3ms decode=0.4ms queue=0.5ms idle=3.0ms
 : SELECT count(*) FROM "seats" AS s0 WHERE (s0."aircraft_code" = 'SU9') []
-:
-: [6]
+: >>> : 6
 
 И похожими для всех остальных самолетов:
 
