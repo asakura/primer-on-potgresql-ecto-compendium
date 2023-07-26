@@ -433,26 +433,21 @@ Referenced by:
 
 #+BEGIN_SRC elixir :eval no :exports both
   # keyword example
-  query =
-    from a in "aircrafts",
-      where: a.aircraft_code == "SU9",
-      select: [a.aircraft_code, a.model, a.range]
-
-  query
-  |> Repo.all()
+  from a in Aircraft,
+    where: a.aircraft_code == "SU9",
+    select: map(a, [:aircraft_code, :model, :range])
 
   # macro example
-  "aircrafts"
+  Aircraft
   |> where([a], a.aircraft_code == "SU9")
-  |> select([a], [a.aircraft_code, a.model, a.range])
-  |> Repo.all()
+  |> select([a], map(a, [:aircraft_code, :model, :range]))
+  |> Repo.one()
 #+END_SRC
 
 #+RESULTS:
 : 13:42:28.221 [debug] QUERY OK source="aircrafts" db=0.4ms queue=0.6ms idle=26.8ms
 : SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 WHERE (a0."aircraft_code" = 'SU9') []
-:
-: [["SU9", "Sukhoi SuperJet-100", 3500]]
+: >>> : %{aircraft_code: "SU9", model: "Sukhoi SuperJet-100", range: 3500}
 
 Для удаления строк из таблиц используется команда ~DELETE~, которая похожа на
 команду ~SELECT~. Удалим какую-нибудь одну строку из таблицы ~aircrafts~:
@@ -466,15 +461,11 @@ Referenced by:
 
 #+BEGIN_SRC elixir :eval no :exports both
   # keyword example
-  query =
-    from a in "aircrafts",
-      where: a.aircraft_code == "CN1"
-
-  query
-  |> Repo.delete_all()
+  from a in Aircraft,
+    where: a.aircraft_code == "CN1"
 
   # macro example
-  "aircrafts"
+  Aircraft
   |> where([a], a.aircraft_code == "CN1")
   |> Repo.delete_all()
 #+END_SRC
@@ -482,8 +473,7 @@ Referenced by:
 #+RESULTS:
 : 13:42:28.226 [debug] QUERY OK source="aircrafts" db=4.2ms queue=0.4ms idle=28.0ms
 : DELETE FROM "aircrafts" AS a0 WHERE (a0."aircraft_code" = 'CN1') []
-:
-: {1, nil}
+: >>> : {1, nil}
 
 Вы можете указать и какое-нибудь более сложное условие. Давайте, например,
 удалим информацию о самолетах с дальностью полета более 10000 км, а также с
@@ -498,15 +488,11 @@ Referenced by:
 
 #+BEGIN_SRC elixir :eval no :exports both
   # keyword example
-  query =
-    from a in "aircrafts",
+  from a in Aircraft,
     where: a.range > 10000 or a.range < 3000
 
-  query
-  |> Repo.delete_all()
-
   # macro example
-  "aircrafts"
+  Aircraft
   |> where([a], a.range > 10000 or a.range < 3000)
   |> Repo.delete_all()
 #+END_SRC
@@ -514,8 +500,7 @@ Referenced by:
 #+RESULTS:
 : 14:03:41.612 [debug] QUERY OK source="aircrafts" db=4.5ms queue=0.5ms idle=39.0ms
 : DELETE FROM "aircrafts" AS a0 WHERE ((a0."range" > 10000) OR (a0."range" < 3000)) []
-:
-: {2, nil}
+: >>> : {2, nil}
 
 При необходимости удаления всех строк из таблицы команда будет совсем простой:
 
@@ -527,12 +512,13 @@ Referenced by:
 : DELETE 6
 
 #+BEGIN_SRC elixir :eval no :exports both
-  Repo.delete_all("aircrafts")
+  Repo.delete_all(Aircraft)
 #+END_SRC
 
 #+RESULTS:
 : 13:42:28.233 [debug] QUERY OK source="aircrafts" db=5.4ms queue=0.5ms idle=33.6ms
 : DELETE FROM "aircrafts" AS a0 []
+: >>> : {6, nil}
 
 Теперь в таблице ~aircrafts~ нет ни одной строки.
 
