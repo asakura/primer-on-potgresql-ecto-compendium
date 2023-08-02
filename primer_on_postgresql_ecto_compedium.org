@@ -1637,6 +1637,66 @@ src_sql[:exports code]{INSERT INTO test_numeric VALUES (999.9999, 'Какое-т
 
 : ERROR:  numeric field overflow
 : DETAIL:  A field with precision 5, scale 2 must round to an absolute value less than 10^3.
+*** Вопрос 2
+Предположим, что возникла необходимость хранить в одном столбце таблицы данные,
+представленные с различной точностью. Это могут быть, например, результаты
+физических измерений разнородных показателей или различные медицинские
+показатели здоровья пациентов (результаты анализов). В таком случае можно
+использовать тип ~numeric~ без указания масштаба и точности.
+
+Команда для создания таблицы может быть, например, такой:
+
+src_sql[:exports code]{CREATE TABLE test_numeric(measurement numeric,
+description text);}
+
+Если у вас в базе данных уже есть таблица с таким же именем, то можно
+предварительно ее удалить с помощью команды:
+
+src_sql[:exports code]{DROP TABLE test_numeric;}
+
+Вставьте в таблицу несколько строк:
+- src_sql[:exports code]{INSERT INTO test_numeric VALUES
+  (1234567890.0987654321, 'Точность 20 знаков, масштаб 10 знаков');}
+- src_sql[:exports code]{INSERT INTO test_numeric VALUES (1.5, 'Точность 2
+  знака, масштаб 1 знак');}
+- src_sql[:exports code]{INSERT INTO test_numeric VALUES
+  (0.12345678901234567890, 'Точность 21 знак, масштаб 20 знаков');}
+- src_sql[:exports code]{INSERT INTO test_numeric VALUES (1234567890,
+  'Точность 10 знаков, масштаб 0 знаков (целое число)');}
+
+Теперь сделайте выборку из таблицы и посмотрите, что все эти
+разнообразныезначения сохранены именно в том виде, как вы их вводили.
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  DROP table test_numeric;
+  CREATE TABLE test_numeric(measurement numeric, description text);
+  INSERT INTO test_numeric VALUES (1234567890.0987654321, 'Точность 20 знаков, масштаб 10 знаков');
+  INSERT INTO test_numeric VALUES (1.5, 'Точность 2 знака, масштаб 1 знак');
+  INSERT INTO test_numeric VALUES (0.12345678901234567890, 'Точность 21 знак, масштаб 20 знаков');
+  INSERT INTO test_numeric VALUES (1234567890, 'Точность 10 знаков, масштаб 0 знаков (целое число)');
+#+END_SRC
+
+#+RESULTS:
+: DROP TABLE
+: CREATE TABLE
+: INSERT 0 1
+: INSERT 0 1
+: INSERT 0 1
+: INSERT 0 1
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT * FROM test_numeric;
+#+END_SRC
+
+#+RESULTS:
+|            measurement | description                                        |
+|------------------------+----------------------------------------------------|
+|  1234567890.0987654321 | Точность 20 знаков, масштаб 10 знаков              |
+|                    1.5 | Точность 2 знака, масштаб 1 знак                   |
+| 0.12345678901234567890 | Точность 21 знак, масштаб 20 знаков                |
+|             1234567890 | Точность 10 знаков, масштаб 0 знаков (целое число) |
 
    #+BEGIN_SRC sql :engine postgres :exports both :eval no
      SELECT 0.1::real * 10 = 1.0::real;
