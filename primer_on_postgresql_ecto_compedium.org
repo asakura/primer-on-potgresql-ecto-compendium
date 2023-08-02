@@ -1578,6 +1578,65 @@ Boris добавим один день с помощью операции кон
 | pilot_name | hobbies                                                        |
 |------------+----------------------------------------------------------------|
 | Boris      | {"trips": 0, "sports": ["хоккей", "футбол"], "home_lib": true} |
+** Контрольные вопросы и задания
+*** Вопрос 1
+Создайте таблицу, содержащую атрибут типа ~numeric(precision, scale)~. Пусть это
+будет таблица, содержащая результаты каких-то измерений. Команда может быть,
+например, такой:
+
+src_sql[:exports code]{CREATE TABLE test_numeric(measurement numeric(5, 2),
+description text);}
+
+Попробуйте с помощью команды ~INSERT~ продемонстрировать округление вводимого
+числа до той точности, которая задана при создании таблицы. Подумайте, какая из
+следующих команд вызовет ошибку и почему? Проверьтесвои предположения, выполнив
+эти команды.
+- src_sql[:exports code]{INSERT INTO test_numeric VALUES (999.9999,
+  'Какое-то измерение');}
+- src_sql[:exports code]{INSERT INTO test_numeric VALUES (999.9009, 'Еще
+  одно измерение');}
+- src_sql[:exports code]{INSERT INTO test_numeric VALUES (999.1111, 'И еще
+  измерение');}
+- src_sql[:exports code]{INSERT INTO test_numeric VALUES (998.9999, 'И еще
+  одно');}
+
+Продемонстрируйте генерирование ошибки при попытке ввода числа, количество цифр
+в котором слева от десятичной точки (запятой) превышает допустимое.
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  DROP table test_numeric;
+  CREATE TABLE test_numeric(measurement numeric(5, 2), description text);
+  -- INSERT INTO test_numeric VALUES (999.9999, 'Какое-то измерение');
+  INSERT INTO test_numeric VALUES (999.9009, 'Еще одно измерение');
+  INSERT INTO test_numeric VALUES (999.1111, 'И еще измерение');
+  INSERT INTO test_numeric VALUES (998.9999, 'И еще одно');
+#+END_SRC
+
+#+RESULTS:
+: DROP TABLE
+: CREATE TABLE
+: INSERT 0 1
+: INSERT 0 1
+: INSERT 0 1
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT * FROM test_numeric;
+#+END_SRC
+
+#+RESULTS:
+| measurement | description        |
+|-------------+--------------------|
+|      999.90 | Еще одно измерение |
+|      999.11 | И еще измерение    |
+|      999.00 | И еще одно         |
+
+src_sql[:exports code]{INSERT INTO test_numeric VALUES (999.9999, 'Какое-то
+ измерение');} вызывает переполнение типа:
+
+: ERROR:  numeric field overflow
+: DETAIL:  A field with precision 5, scale 2 must round to an absolute value less than 10^3.
 
    #+BEGIN_SRC sql :engine postgres :exports both :eval no
      SELECT 0.1::real * 10 = 1.0::real;
