@@ -1697,6 +1697,41 @@ src_sql[:exports code]{DROP TABLE test_numeric;}
 |                    1.5 | Точность 2 знака, масштаб 1 знак                   |
 | 0.12345678901234567890 | Точность 21 знак, масштаб 20 знаков                |
 |             1234567890 | Точность 10 знаков, масштаб 0 знаков (целое число) |
+*** Вопрос 3
+Тип данных ~numeric~ поддерживает специальное значение ~NaN~, которое означает
+/not a number/. В документации утверждается, что значение ~NaN~ считается равным
+другому значению ~NaN~, а также что значение ~NaN~ считается большим любого
+другого «нормального» значения, т.е. ~не-NaN~. Проверьте эти утверждения с
+помощью SQL-команды ~SELECT~. В качестве примера приведем команду:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT 'NaN'::numeric > 10000;
+#+END_SRC
+
+#+RESULTS:
+| ?column? |
+|----------|
+| t        |
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT 'NaN'::numeric = 'NaN'::numeric;
+#+END_SRC
+
+#+RESULTS:
+| ?column? |
+|----------|
+| t        |
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT 'NaN'::numeric > 10^99999::numeric;
+#+END_SRC
+
+#+RESULTS:
+| ?column? |
+|----------|
+| t        |
 
    #+BEGIN_SRC sql :engine postgres :exports both :eval no
      SELECT 0.1::real * 10 = 1.0::real;
