@@ -1798,6 +1798,58 @@ precision~.
 | ?column? |
 |----------|
 | t        |
+*** Вопрос 6
+Типы данных ~real~ и ~double precision~ поддерживают специальное значение ~NaN~,
+которое означает «не число» (not a number).
+
+В математике существует такое понятие, как /неопределенность/. В качестве одного
+из ее вариантов служит результат операции умножения нуля на бесконечность.
+Посмотрите, что выдаст в результате PostgreSQL:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT 0.0 * 'Inf'::real;
+#+END_SRC
+
+#+RESULTS:
+| ?column? |
+|----------|
+|      NaN |
+
+В документации утверждается, что значение ~NaN~ считается равным другому
+значению ~NaN~, а также что значение ~NaN~ считается большим любого другого
+«нормального» значения, т.е. ~не-NaN~. Проверьте эти утверждения с помощью
+SQL-команды ~SELECT~.
+
+Например, сравните значения ~NaN~ и ~Infinity~.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT 'NaN'::real > 'Inf'::real;
+#+END_SRC
+
+#+RESULTS:
+| ?column? |
+|----------|
+| t        |
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT 'NaN'::real = 'NaN'::real;
+#+END_SRC
+
+#+RESULTS:
+| ?column? |
+|----------|
+| t        |
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT 'NaN'::real > '1e+30'::real;
+#+END_SRC
+
+#+RESULTS:
+| ?column? |
+|----------|
+| t        |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
