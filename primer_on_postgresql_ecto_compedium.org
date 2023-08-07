@@ -1929,6 +1929,116 @@ SQL-команды ~SELECT~.
 
 Вы увидите, что явное задание значения для столбца ~id~ не влияет на
 автоматическое генерирование значений этого столбца.
+*** Вопрос 8
+Немного усложним определение таблицы из предыдущего задания. Пусть теперь
+столбец ~id~ будет первичным ключом этой таблицы.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  DROP TABLE test_serial;
+  CREATE TABLE test_serial(id serial PRIMARY KEY, name text);
+#+END_SRC
+
+#+RESULTS:
+: DROP TABLE
+: CREATE TABLE
+
+Теперь выполните следующие команды для добавления строк в таблицу и удаления
+одной строки из нее. Для пошагового управления этим процессом выполняйте выборку
+данных из таблицы с помощью команды ~SELECT~ после каждой команды вставки или
+удаления.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  INSERT INTO test_serial (name) VALUES ('Вишневая');
+  SELECT * FROM test_serial;
+#+END_SRC
+
+#+RESULTS:
+| id | name     |
+|----+----------|
+|  1 | Вишневая |
+
+Явно зададим значение столбца ~id~:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  INSERT INTO test_serial (id, name) VALUES (2, 'Прохладная');
+  SELECT * FROM test_serial;
+#+END_SRC
+
+#+RESULTS:
+| id | name       |
+|----+------------|
+|  1 | Вишневая   |
+|  2 | Прохладная |
+
+При выполнении этой команды СУБД выдаст сообщение об ошибке. Почему?
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  INSERT INTO test_serial (name) VALUES ('Грушевая');
+#+END_SRC
+
+#+RESULTS:
+: ERROR:  duplicate key value violates unique constraint "test_serial_pkey"
+: DETAIL:  Key (id)=(2) already exists.
+
+*ОТВЕТ*: команда вставки с явно указанным значением столбца ~id~ не
+икрементировала значение ~sequence~ связанного с этим столбцом.
+
+Повторим эту же команду. Теперь все в порядке. Почему?
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  INSERT INTO test_serial (name) VALUES ('Грушевая');
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+
+*ОТВЕТ*: откат транзакции не приводит к откату на предыдущее значение
+~sequence~.
+
+Добавим еще одну строку.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  INSERT INTO test_serial (name) VALUES ('Зеленая');
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+
+А теперь удалим ее же.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  DELETE FROM test_serial WHERE id = 4;
+#+END_SRC
+
+#+RESULTS:
+: DELETE 1
+
+Добавим последнюю строку.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  INSERT INTO test_serial (name) VALUES ('Луговая');
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+
+Теперь сделаем выборку.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT * FROM test_serial;
+#+END_SRC
+
+#+RESULTS:
+| id | name       |
+|----+------------|
+|  1 | Вишневая   |
+|  2 | Прохладная |
+|  3 | Грушевая   |
+|  5 | Луговая    |
+
+Вы увидите, что в нумерации образовалась «дыра». Это из-за того, что при
+формировании нового значения из последовательности поиск максимального значения,
+уже имеющегося в столбце, не выполняется.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
