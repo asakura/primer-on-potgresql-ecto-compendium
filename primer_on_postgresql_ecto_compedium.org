@@ -1732,6 +1732,46 @@ src_sql[:exports code]{DROP TABLE test_numeric;}
 | ?column? |
 |----------|
 | t        |
+*** Вопрос 4
+При работе с числами типов ~real~ и ~double precision~ нужно помнить, что
+сравнение двух чисел с плавающей точкой на предмет равенства их значений может
+привести к неожиданным результатам. Например, сравним два очень маленьких числа
+(они представлены в экспоненциальной форме записи):
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT '5e-324'::double precision > '4e-324'::double precision;
+#+END_SRC
+
+#+RESULTS:
+| ?column? |
+|----------|
+| f        |
+
+Чтобы понять, почему так получается, выполните еще запрос:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT '5e-324'::double precision, '4e-324'::double precision;
+#+END_SRC
+
+#+RESULTS:
+| float8 | float8 |
+|--------+--------|
+| 5e-324 | 5e-324 |
+
+Самостоятельно проведите аналогичные эксперименты с очень большими числами,
+находящимися на границе допустимого диапазона для чисел типов ~real~ и ~double
+precision~.
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT '1e+308'::double precision, '1.79e+308'::double precision;
+#+END_SRC
+
+#+RESULTS:
+| float8 |    float8 |
+|--------+-----------|
+| 1e+308 | 1.79e+308 |
 
    #+BEGIN_SRC sql :engine postgres :exports both :eval no
      SELECT 0.1::real * 10 = 1.0::real;
