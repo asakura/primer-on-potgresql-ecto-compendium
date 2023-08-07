@@ -1850,6 +1850,85 @@ SQL-команды ~SELECT~.
 | ?column? |
 |----------|
 | t        |
+*** Вопрос 7
+Тип ~serial~ может применяться для столбцов, содержащих числовые значения,
+которые должны быть уникальными в пределах таблицы, например, идентификаторы
+каких-то объектов. В качестве иллюстрации применения типа ~serial~ предложим
+таблицу, содержащую наименования улиц и площадей:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
+  CREATE TABLE test_serial(id serial, name text);
+#+END_SRC
+
+#+RESULTS:
+: CREATE TABLE
+
+Введите несколько строк. Обратите внимание, что значение для столбца ~id~
+указывать не обязательно (и даже не нужно). Но поскольку мы задаем значения не
+для всех столбцов, имеющихся в таблице, мы должны указать в команде ~INSERT~ не
+только список значений, но и список столбцов. Конечно, в данном простом случае
+эти списки состоят лишь из одного элемента.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
+  INSERT INTO test_serial (name) VALUES ('Вишневая');
+  INSERT INTO test_serial (name) VALUES ('Грушевая');
+  INSERT INTO test_serial (name) VALUES ('Зеленая');
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+: INSERT 0 1
+: INSERT 0 1
+
+Сделайте выборку данных из таблицы, вы увидите, что значения столбца ~id~ имеют
+последовательные значения, начиная с 1.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT * FROM test_serial;
+#+END_SRC
+
+#+RESULTS:
+| id | name     |
+|----+----------|
+|  1 | Вишневая |
+|  2 | Грушевая |
+|  3 | Зеленая  |
+
+Давайте проведем эксперимент со столбцом ~id~. Выполните команду ~INSERT~, в
+которой укажите явное значение столбца ~id~:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
+  INSERT INTO test_serial (id, name) VALUES (10, 'Прохладная');
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+
+А теперь добавьте еще одну строку, но уже не указывая явно значение для
+столбца ~id~ (как мы поступали в предыдущих командах):
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
+  INSERT INTO test_serial (name) VALUES ('Луговая');
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT * FROM test_serial;
+#+END_SRC
+
+#+RESULTS:
+| id | name       |
+|----+------------|
+|  1 | Вишневая   |
+|  2 | Грушевая   |
+|  3 | Зеленая    |
+| 10 | Прохладная |
+|  4 | Луговая    |
+
+Вы увидите, что явное задание значения для столбца ~id~ не влияет на
+автоматическое генерирование значений этого столбца.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
