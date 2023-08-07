@@ -1772,10 +1772,32 @@ precision~.
 | float8 |    float8 |
 |--------+-----------|
 | 1e+308 | 1.79e+308 |
+*** Вопрос 5
+Типы данных ~real~ и ~double precision~ поддерживают специальные значения
+~Infinity~ (бесконечность) и ~−Infinity~ (отрицательная бесконечность).
+Проверьте с помощью SQL-команды ~SELECT~ ожидаемые свойства этих значений.
+Например, сравните ~Infinity~ с наибольшим значением, которое допускается для
+типа ~double precision~ (можно использовать сокращенное написание ~Inf~):
 
-   #+BEGIN_SRC sql :engine postgres :exports both :eval no
-     SELECT 0.1::real * 10 = 1.0::real;
-   #+END_SRC
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT 'Inf'::double precision > 1e+308;
+#+END_SRC
+
+#+RESULTS:
+| ?column? |
+|----------|
+| t        |
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT '-Inf'::double precision < '5e-324'::double precision;
+#+END_SRC
+
+#+RESULTS:
+| ?column? |
+|----------|
+| t        |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
