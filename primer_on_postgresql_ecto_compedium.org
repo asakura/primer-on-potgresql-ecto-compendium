@@ -2105,6 +2105,170 @@ SQL-команды ~SELECT~.
 | first                 | second            | third                |
 |-----------------------+-------------------+----------------------|
 | -1 days -00:00:27.345 | -1 days -00:00:27 | -1 days -00:00:27.35 |
+*** Вопрос 12
+Формат ввода и вывода даты можно изменить с помощью конфигурационного параметра
+~datestyle~. Значение этого параметра состоит из двух компонентов: первый
+управляет форматом вывода даты, а второй регулирует порядок следования составных
+частей даты (год, месяц, день) при вводе и выводе. Текущее значение этого
+параметра можно узнать с помощью команды ~SHOW~: src_sql[:exports code]{SHOW
+datestyle;}
+
+По умолчанию он имеет такое значение:
+
+#+BEGIN_EXAMPLE
+asakura=# show datestyle;
+ DateStyle
+-----------
+ ISO, DMY
+(1 row)
+#+END_EXAMPLE
+
+Продемонстрируем влияние этого параметра на работу с типами данных ~date~ и
+~timestamp~. Для экспериментов возьмем дату, в которой число (день) превышает
+12, чтобы нельзя было день перепутать с номером месяца. Пусть это будет,
+например, 18 мая 2016 г.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT '18-05-2016'::date;
+#+END_SRC
+
+#+RESULTS:
+|       date |
+|------------|
+| 2016-05-18 |
+
+Попробуем ввести дату в порядке «месяц, день, год»:
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  SELECT '05-18-2016'::date;
+#+END_SRC
+
+#+RESULTS:
+: ERROR:  date/time field value out of range: "05-18-2016"
+: LINE 1: SELECT '05-18-2016'::date;
+:                ^
+: HINT:  Perhaps you need a different "datestyle" setting.
+
+В ответ получим сообщение об ошибке. Если бы мы выбрали дату, в которой число
+(день) было бы не больше 12, например, 9, то сообщение об ошибке не было бы
+сформировано, т.е. мы с такой датой не смогли бы проиллюстрировать влияние
+значения ~DMY~ параметра ~datestyle~. Но главное, что в таком случае мы бы
+просто не заметили допущенной ошибки.
+
+А вот использовать порядок «год, месяц, день» при вводе можно несмотря на то,
+что параметр ~datestyle~ предписывает «день, месяц, год». Порядок «год, месяц,
+день» является универсальным, его можно использовать всегда, независимо от
+настроек параметра ~datestyle~.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT '2016-05-18'::date;
+#+END_SRC
+
+#+RESULTS:
+|       date |
+|------------|
+| 2016-05-18 |
+
+Продолжим экспериментирование с параметром ~datestyle~. Давайте изменим его
+значение. Сделать это можно многими способами, но мы упомянем лишь некоторые:
+- зменив его значение в конфигурационном файле ~postgresql.conf~, который
+  находится в каталоге ~/usr/local/pgsql/data~;
+- назначив переменную системного окружения ~PGDATESTYLE~;
+- воспользовавшись командой ~SET~.
+
+Сейчас выберем третий способ, а первые два рассмотрим при выполнении других
+заданий. Поскольку параметр ~datestyle~ состоит фактически из двух частей,
+которые можно задавать не только обе сразу, но и по отдельности, изменим только
+порядок следования составных частей даты, не изменяя формат вывода с ISO на
+какой-либо другой.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :session datestyle :eval no
+  SET datestyle TO 'MDY';
+#+END_SRC
+
+#+RESULTS:
+: SET
+
+Повторим одну из команд, выполненных ранее. Теперь она должна вызвать ошибку.
+Почему?
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :session datestyle :eval no
+  SELECT '18-05-2016'::date;
+#+END_SRC
+
+#+RESULTS:
+: ERROR:  date/time field value out of range: "18-05-2016"
+: LINE 1: SELECT '18-05-2016'::date;
+:                ^
+: HINT:  Perhaps you need a different "datestyle" setting.
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :session datestyle :eval no
+  SELECT '18-05-2016'::timestamp;
+#+END_SRC
+
+#+RESULTS:
+: ERROR:  date/time field value out of range: "18-05-2016"
+: LINE 1: SELECT '18-05-2016'::date;
+:                ^
+: HINT:  Perhaps you need a different "datestyle" setting.
+
+А такая команда, наоборот, теперь будет успешно выполнена:
+
+#+BEGIN_SRC sql :engine postgres :exports both :session datestyle :eval no
+  SELECT '05-18-2016'::date;
+#+END_SRC
+
+#+RESULTS:
+|       date |
+|------------|
+| 2016-05-18 |
+
+#+BEGIN_SRC sql :engine postgres :exports both :session datestyle :eval no
+  SELECT '05-18-2016'::timestamp;
+#+END_SRC
+
+#+RESULTS:
+|                date |
+|---------------------|
+| 2016-05-18 00:00:00 |
+
+Теперь приведите настройку параметра ~datestyle~ в исходное состояние:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :session datestyle :eval no
+  SET datestyle TO DEFAULT;
+#+END_SRC
+
+#+RESULTS:
+: SET
+
+Самостоятельно выполните команды ~SELECT~, приведенные выше, но замените в них
+тип ~date~ на тип ~timestamp~. Вы увидите, что дата в рамках типа ~timestamp~
+обрабатывается аналогично типу ~date~.
+
+Сейчас изменим сразу обе части параметра *datestyle*:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :session datestyle :eval no
+  SET datestyle TO 'Postgres, DMY';
+#+END_SRC
+
+#+RESULTS:
+: SET
+
+Проверьте полученный результат с помощью команды ~SHOW~.
+
+Самостоятельно выполните команды ~SELECT~, приведенные выше, как для значения
+типа ~date~, так и для значения типа ~timestamp~. Обратите внимание, что если
+выбран формат Postgres, то порядок следования составных частей даты (день,
+месяц, год), заданный в параметре ~datestyle~, используется не только при вводе
+значений, но и при выводе. Напомним, что вводом мы считаем команду ~SELECT~, а
+выводом — результат ее выполнения, выведенный на экран.
+
+В документации (см. раздел 8.5.2 «Вывод даты/времени») сказано, что формат
+вывода даты может принимать значения ISO, Postgres, SQL и German. Первые два
+варианта мы уже рассмотрели. Самостоятельно поэкспериментируйте с двумя
+оставшимися по той же схеме, по которой вы уже действовали ранее при выполнении
+этого задания. Можно воспользоваться и стандартными функциями ~current_date~ и
+~current_timestamp~.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
