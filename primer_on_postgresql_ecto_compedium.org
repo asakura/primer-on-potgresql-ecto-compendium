@@ -2301,6 +2301,26 @@ asakura=# SELECT current_timestamp;
 
 asakura=#
 #+END_EXAMPLE
+*** Вопрос 14
+Назначить значение параметра ~datestyle~ можно в конфигурационном файле
+~postgresql.conf~, который находится в каталоге ~/usr/local/pgsql/data~.
+Предварительно сохраните текущую (корректно работающую) версию этого файла, а
+затем измените в нем значение параметра ~datestyle~, например, на ~Postgres,
+YMD~. Перезапустите сервер PostgreSQL, чтобы изменения вступили в силу.
+
+Для проверки полученного результата выполните несколько команд ~SELECT~,
+например:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT current_timestamp;
+#+END_SRC
+
+*ОТВЕТ*:
+
+#+RESULTS:
+| current_timestamp                    |
+|--------------------------------------|
+| Fri Apr 09 11:03:56.041788 2021 CEST |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
