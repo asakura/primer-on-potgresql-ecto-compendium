@@ -2586,6 +2586,68 @@ src_sql[:exports code]{SET intervalstyle TO DEFAULT;}
 | ?column? |
 |----------|
 | 19:34:35 |
+*** Вопрос 25
+Значения временных отметок можно усекать с той или иной точностью с помощью
+функции ~date_trunc~. Например, с помощью следующей команды можно «отрезать»
+дробную часть секунды:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT date_trunc('sec', timestamp '1999-11-27 12:34:56.987654');
+#+END_SRC
+
+#+RESULTS:
+| date_trunc          |
+|---------------------|
+| 1999-11-27 12:34:56 |
+
+Напомним, что в данной команде используется операция приведения типа.
+
+Выполните эту команду, последовательно указывая в качестве первого параметра
+значения ~microsecond~, ~millisecond~, ~second~, ~minute~, ~hour~, ~day~,
+~week~, ~month~, ~year~, ~decade~, ~century~, ~millennium~ (которые обозначают
+соответственно микросекунды, миллисекунды, секунды, минуты, часы, дни, недели,
+месяцы, годы, десятилетия, века и тысячелетия). Допустимы сокращения ~sec~,
+~min~, ~mon~, ~dec~, ~cent~, ~mil~.
+
+Обратите внимание, что результирующее значение получается не путем округления
+исходного значения, а именно путем отбрасывания более мелких единиц. При этом
+поля времени (часы, минуты и секунды) заменяются нулями, а поля даты (годы,
+месяцы и дни) — заменяются цифрами 01. Однако при использовании параметра ~week~
+картина получается более интересная.
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT * FROM (VALUES
+                 ('microsecond', date_trunc('microsecond', timestamp '1999-11-27 12:34:56.987654')),
+                 ('millisecond', date_trunc('millisecond', timestamp '1999-11-27 12:34:56.987654')),
+                 ('second', date_trunc('second', timestamp '1999-11-27 12:34:56.987654')),
+                 ('minute', date_trunc('minute', timestamp '1999-11-27 12:34:56.987654')),
+                 ('hour', date_trunc('hour', timestamp '1999-11-27 12:34:56.987654')),
+                 ('day', date_trunc('day', timestamp '1999-11-27 12:34:56.987654')),
+                 ('week', date_trunc('week', timestamp '1999-11-27 12:34:56.987654')),
+                 ('month', date_trunc('month', timestamp '1999-11-27 12:34:56.987654')),
+                 ('year', date_trunc('year', timestamp '1999-11-27 12:34:56.987654')),
+                 ('decade', date_trunc('decade', timestamp '1999-11-27 12:34:56.987654')),
+                 ('century', date_trunc('century', timestamp '1999-11-27 12:34:56.987654')),
+                 ('millennium', date_trunc('millennium', timestamp '1999-11-27 12:34:56.987654'))) AS foo(res, trunc);
+#+END_SRC
+
+#+RESULTS:
+| res         | trunc                      |
+|-------------+----------------------------|
+| microsecond | 1999-11-27 12:34:56.987654 |
+| millisecond | 1999-11-27 12:34:56.987    |
+| second      | 1999-11-27 12:34:56        |
+| minute      | 1999-11-27 12:34:00        |
+| hour        | 1999-11-27 12:00:00        |
+| day         | 1999-11-27 00:00:00        |
+| week        | 1999-11-*22* 00:00:00      |
+| month       | 1999-11-01 00:00:00        |
+| year        | 1999-01-01 00:00:00        |
+| decade      | 1990-01-01 00:00:00        |
+| century     | 1901-01-01 00:00:00        |
+| millennium  | 1001-01-01 00:00:00        |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
