@@ -2648,6 +2648,46 @@ src_sql[:exports code]{SET intervalstyle TO DEFAULT;}
 | decade      | 1990-01-01 00:00:00        |
 | century     | 1901-01-01 00:00:00        |
 | millennium  | 1001-01-01 00:00:00        |
+*** Вопрос 26
+Функция ~date_trunc~ может работать не только с данными типа ~timestamp~, но
+также и с данными типа ~interval~. Самостоятельно ознакомьтесь с этими
+возможностями по документации (см. раздел 9.9 «Операторы и функции
+даты/времени»).
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT * FROM (VALUES
+                 ('microsecond', date_trunc('microsecond', interval 'P1999-11-27T12:34:56.987654')),
+                 ('millisecond', date_trunc('millisecond', interval 'P1999-11-27T12:34:56.987654')),
+                 ('second',      date_trunc('second',      interval 'P1999-11-27T12:34:56.987654')),
+                 ('minute',      date_trunc('minute',      interval 'P1999-11-27T12:34:56.987654')),
+                 ('hour',        date_trunc('hour',        interval 'P1999-11-27T12:34:56.987654')),
+                 ('day',         date_trunc('day',         interval 'P1999-11-27T12:34:56.987654')),
+                 ('month',       date_trunc('month',       interval 'P1999-11-27T12:34:56.987654')),
+                 ('year',        date_trunc('year',        interval 'P1999-11-27T12:34:56.987654')),
+                 ('decade',      date_trunc('decade',      interval 'P1999-11-27T12:34:56.987654')),
+                 ('century',     date_trunc('century',     interval 'P1999-11-27T12:34:56.987654')),
+                 ('millennium',  date_trunc('millennium',  interval 'P1999-11-27T12:34:56.987654'))) AS foo(res, trunc);
+#+END_SRC
+
+#+RESULTS:
+| res         | trunc                                      |
+|-------------+--------------------------------------------|
+| microsecond | 1999 years 11 mons 27 days 12:34:56.987654 |
+| millisecond | 1999 years 11 mons 27 days 12:34:56.987    |
+| second      | 1999 years 11 mons 27 days 12:34:56        |
+| minute      | 1999 years 11 mons 27 days 12:34:00        |
+| hour        | 1999 years 11 mons 27 days 12:00:00        |
+| day         | 1999 years 11 mons 27 days                 |
+| month       | 1999 years 11 mons                         |
+| year        | 1999 years                                 |
+| decade      | 1990 years                                 |
+| century     | 1900 years                                 |
+| millennium  | 1000 years                                 |
+
+~week~ использовать нельзя:
+: ERROR:  interval units "week" not supported because months usually have fractional weeks
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
