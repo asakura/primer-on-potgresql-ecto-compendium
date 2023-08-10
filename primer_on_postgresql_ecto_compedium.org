@@ -2525,6 +2525,28 @@ YMD~. Перезапустите сервер PostgreSQL, чтобы измен�
 src_sql[:exports code]{SET intervalstyle TO DEFAULT;}
 
 *TODO* ответить на вопрос
+*** Вопрос 23
+Выполните следующие две команды и объясните различия в выведенных результатах:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT ('2016-09-16'::date - '2015-09-01'::date);
+#+END_SRC
+
+#+RESULTS:
+| ?column? |
+|----------|
+|      381 |
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT ('2016-09-16'::timestamp - '2015-09-01'::timestamp);
+#+END_SRC
+
+#+RESULTS:
+| ?column? |
+|----------|
+| 381 days |
+
+*ОТВЕТ*: в первом случае возвращает ~integer~, а во втором ~interval~.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
