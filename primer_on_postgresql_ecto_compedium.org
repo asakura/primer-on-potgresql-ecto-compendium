@@ -2688,6 +2688,69 @@ src_sql[:exports code]{SET intervalstyle TO DEFAULT;}
 
 ~week~ использовать нельзя:
 : ERROR:  interval units "week" not supported because months usually have fractional weeks
+*** Вопрос 27
+Весьма полезной является функция ~extract~. С ее помощью можно извлечь значение
+отдельного поля из временной отметки ~timestamp~. Наименование поля задается в
+первом параметре. Эти наименования такие же, что и для функции ~date_trunc~.
+Выполните следующую команду
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT extract('microsecond' FROM timestamp '1999-11-27 12:34:56.123459');
+#+END_SRC
+
+#+RESULTS:
+| date_part |
+|-----------|
+|  56123459 |
+
+Она выводит не просто значение поля микросекунд, т.е. 123459, а дополнительно
+преобразует число секунд в микросекунды и добавляет значение поля микросекунд.
+
+Выполните эту команду, последовательно указывая в качестве первого параметра
+значения ~microsecond~, ~millisecond~, ~second~, ~minute~, ~hour~, ~day~,
+~week~, ~month~, ~year~, ~decade~, ~century~, ~millennium~. Можно использовать
+сокращения этих наименований, которые приведены в предыдущем задании.
+
+Обратите внимание, что в ряде случаев выводится не просто конкретное поле
+(фрагмент) из временной отметки, а некоторый продукт переработки этого поля.
+Например, если в качестве первого параметра функции ~extract~ в вышеприведенной
+команде указать ~cent~ (век), то мы получим в ответ не 19 (что и было бы
+буквальным значением поля «век»), а 20, поскольку 1999 год принадлежит
+двадцатому веку.
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT * FROM (VALUES
+                 ('microsecond', extract('microsecond' FROM timestamp '1999-11-27 12:34:56.987654')),
+                 ('millisecond', extract('millisecond' FROM timestamp '1999-11-27 12:34:56.987654')),
+                 ('second',      extract('second'      FROM timestamp '1999-11-27 12:34:56.987654')),
+                 ('minute',      extract('minute'      FROM timestamp '1999-11-27 12:34:56.987654')),
+                 ('hour',        extract('hour'        FROM timestamp '1999-11-27 12:34:56.987654')),
+                 ('day',         extract('day'         FROM timestamp '1999-11-27 12:34:56.987654')),
+                 ('week',        extract('week'        FROM timestamp '1999-11-27 12:34:56.987654')),
+                 ('month',       extract('month'       FROM timestamp '1999-11-27 12:34:56.987654')),
+                 ('year',        extract('year'        FROM timestamp '1999-11-27 12:34:56.987654')),
+                 ('decade',      extract('decade'      FROM timestamp '1999-11-27 12:34:56.987654')),
+                 ('century',     extract('century'     FROM timestamp '1999-11-27 12:34:56.987654')),
+                 ('millennium',  extract('millennium'  FROM timestamp '1999-11-27 12:34:56.987654'))) AS foo(res, trunc);
+#+END_SRC
+
+#+RESULTS:
+| res         |     trunc |
+|-------------+-----------|
+| microsecond |  56987654 |
+| millisecond | 56987.654 |
+| second      | 56.987654 |
+| minute      |        34 |
+| hour        |        12 |
+| day         |        27 |
+| week        |      *47* |
+| month       |        11 |
+| year        |      1999 |
+| decade      |       199 |
+| century     |      *20* |
+| millennium  |         2 |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
