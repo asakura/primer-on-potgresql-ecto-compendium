@@ -2547,6 +2547,45 @@ src_sql[:exports code]{SET intervalstyle TO DEFAULT;}
 | 381 days |
 
 *ОТВЕТ*: в первом случае возвращает ~integer~, а во втором ~interval~.
+*** Вопрос 24
+Выполните следующие две команды и объясните различия в выведенных результатах:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT ('20:34:35'::time - 1);
+#+END_SRC
+
+#+RESULTS:
+: ERROR:  operator does not exist: time without time zone - integer
+: LINE 1: SELECT ('20:34:35'::time - 1);
+:                                  ^
+: HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT ('2016-09-16'::date - 1);
+#+END_SRC
+
+#+RESULTS:
+|   ?column? |
+|------------|
+| 2016-09-15 |
+
+Почему при выполнении первой команды возникает ошибка? Как можно модифицировать
+эту команду, чтобы ошибка исчезла?
+
+Для получения полной информации обратитесь к разделу 9.9 «Операторы и функции
+даты/времени» документации.
+
+*ОТВЕТ*: оператор ~-~ не определен для типа ~time~ и ~integer~. Можно привести к
+типу ~interval~.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT ('20:34:35'::time - '1 hour'::interval);
+#+END_SRC
+
+#+RESULTS:
+| ?column? |
+|----------|
+| 19:34:35 |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
