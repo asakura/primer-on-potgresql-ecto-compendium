@@ -2751,6 +2751,45 @@ src_sql[:exports code]{SET intervalstyle TO DEFAULT;}
 | decade      |       199 |
 | century     |      *20* |
 | millennium  |         2 |
+*** Вопрос 28
+Функция ~extract~ может работать не только с данными типа ~timestamp~, но также
+и с данными типа ~interval~. Самостоятельно ознакомьтесь с этими возможностями
+по документации (см. раздел 9.9 «Операторы и функции даты/времени»).
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT * FROM (VALUES
+                 ('microsecond', extract('microsecond' FROM interval 'P1999-11-27T12:34:56.987654')),
+                 ('millisecond', extract('millisecond' FROM interval 'P1999-11-27T12:34:56.987654')),
+                 ('second',      extract('second'      FROM interval 'P1999-11-27T12:34:56.987654')),
+                 ('minute',      extract('minute'      FROM interval 'P1999-11-27T12:34:56.987654')),
+                 ('hour',        extract('hour'        FROM interval 'P1999-11-27T12:34:56.987654')),
+                 ('day',         extract('day'         FROM interval 'P1999-11-27T12:34:56.987654')),
+                 ('month',       extract('month'       FROM interval 'P1999-11-27T12:34:56.987654')),
+                 ('year',        extract('year'        FROM interval 'P1999-11-27T12:34:56.987654')),
+                 ('decade',      extract('decade'      FROM interval 'P1999-11-27T12:34:56.987654')),
+                 ('century',     extract('century'     FROM interval 'P1999-11-27T12:34:56.987654')),
+                 ('millennium',  extract('millennium'  FROM interval 'P1999-11-27T12:34:56.987654'))) AS foo(res, trunc);
+#+END_SRC
+
+#+RESULTS:
+| res         |     trunc |
+|-------------+-----------|
+| microsecond |  56987654 |
+| millisecond | 56987.654 |
+| second      | 56.987654 |
+| minute      |        34 |
+| hour        |        12 |
+| day         |        27 |
+| month       |        11 |
+| year        |      1999 |
+| decade      |       199 |
+| century     |        19 |
+| millennium  |         1 |
+
+~week~ использовать нельзя:
+: ERROR:  interval units "week" not supported
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
