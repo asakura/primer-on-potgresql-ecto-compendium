@@ -2790,6 +2790,48 @@ src_sql[:exports code]{SET intervalstyle TO DEFAULT;}
 
 ~week~ использовать нельзя:
 : ERROR:  interval units "week" not supported
+*** Вопрос 29
+В тексте главы мы создавали таблицу с помощью команды
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  CREATE TABLE databases(is_open_source boolean, dbms_name text);
+#+END_SRC
+
+#+RESULTS:
+: CREATE TABLE
+
+и заполняли ее данными.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  INSERT INTO databases VALUES (TRUE, 'PostgreSQL');
+  INSERT INTO databases VALUES (FALSE, 'Oracle');
+  INSERT INTO databases VALUES (TRUE, 'MySQL');
+  INSERT INTO databases VALUES (FALSE, 'MS SQL Server');
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+: INSERT 0 1
+: INSERT 0 1
+: INSERT 0 1
+
+Как вы думаете, являются ли все приведенные ниже команды равнозначными в
+смысле результатов, получаемых с их помощью?
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  SELECT * FROM databases WHERE NOT is_open_source;
+  SELECT * FROM databases WHERE is_open_source <> 'yes';
+  SELECT * FROM databases WHERE is_open_source <> 't';
+  SELECT * FROM databases WHERE is_open_source <> '1';
+  SELECT * FROM databases WHERE is_open_source <>  1;
+#+END_SRC
+
+*ОТВЕТ*: нет, см. ниже
+
+: ERROR:  operator does not exist: boolean <> integer
+: LINE 1: SELECT * FROM databases WHERE is_open_source <> 1;
+:                                                     ^
+: HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
