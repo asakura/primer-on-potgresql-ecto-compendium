@@ -3208,6 +3208,66 @@ src_sql[:exports code]{SET intervalstyle TO DEFAULT;}
 | Petr       | {1,2,5,7}   | {{сосиска,макароны,кофе},{котлета,каша,кофе},{сосиска,каша,кофе},{котлета,каша,чай}} |
 | Pavel      | {2,5}       | {{сосиска,макароны,кофе},{котлета,каша,кофе},{сосиска,каша,кофе},{котлета,каша,чай}} |
 | Boris      | {3,5,6}     | {{сосиска,макароны,кофе},{котлета,каша,кофе},{сосиска,каша,кофе},{котлета,каша,чай}} |
+*** Вопрос 34
+В тексте раздела 4.6 мы выполняли обновление JSON-объекта с помощью функции
+~jsonb_set~: добавляли значение в массив. Для обновления скалярных значений,
+например, по ключу ~trips~, можно сделать так:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  UPDATE pilot_hobbies
+     SET hobbies = jsonb_set(hobbies, '{trips}', '10')
+   WHERE pilot_name = 'Pavel';
+#+END_SRC
+
+#+RESULTS:
+: UPDATE 1
+
+Второй параметр функции — это путь в пределах JSON-объекта. Он теперь
+представляет собой лишь имя ключа. Однако его необходимо заключить в фигурные
+скобки. Третий параметр — это новое значение. Хотя оно числовое, но все равно
+требуется записать его в одинарных кавычках.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT pilot_name,
+         hobbies->'trips' AS trips
+    FROM pilot_hobbies;
+#+END_SRC
+
+#+RESULTS:
+| pilot_name | trips |
+|------------+-------|
+| Ivan       |     3 |
+| Petr       |     2 |
+| Boris      |     0 |
+| Pavel      |    10 |
+
+Задание. Самостоятельно выполните изменение значения по ключу ~home_lib~ в одной
+из строк таблицы.
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  UPDATE pilot_hobbies
+     SET hobbies = jsonb_set(hobbies, '{home_lib}', 'false')
+   WHERE pilot_name = 'Ivan';
+#+END_SRC
+
+#+RESULTS:
+: UPDATE 1
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT pilot_name,
+         hobbies->'home_lib' AS home_lib
+    FROM pilot_hobbies;
+#+END_SRC
+
+#+RESULTS:
+| pilot_name | home_lib |
+|------------+----------|
+| Petr       | true     |
+| Boris      | true     |
+| Pavel      | false    |
+| Ivan       | false    |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
