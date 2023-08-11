@@ -2832,6 +2832,44 @@ src_sql[:exports code]{SET intervalstyle TO DEFAULT;}
 : LINE 1: SELECT * FROM databases WHERE is_open_source <> 1;
 :                                                     ^
 : HINT:  No operator matches the given name and argument types. You might need to add explicit type casts.
+*** Вопрос 30
+Обратимся к таблице, создаваемой с помощью команды
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  CREATE TABLE test_bool(a boolean, b text);
+#+END_SRC
+
+#+RESULTS:
+: CREATE TABLE
+
+Как вы думаете, какие из приведенных ниже команд содержат ошибку?
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  INSERT INTO test_bool VALUES ( TRUE, 'yes' );
+
+  -- ERROR:  column "yes" does not exist
+  INSERT INTO test_bool VALUES (  yes, 'yes' );
+
+  INSERT INTO test_bool VALUES ('yes', true  );
+  INSERT INTO test_bool VALUES ('yes', TRUE  );
+  INSERT INTO test_bool VALUES (  '1', 'true');
+
+  -- ERROR:  column "a" is of type boolean but expression is of type integer
+  INSERT INTO test_bool VALUES (    1, 'true');
+
+  INSERT INTO test_bool VALUES (  't', 'true');
+
+  -- ERROR:  column "truth" does not exist
+  INSERT INTO test_bool VALUES (  't', truth );
+
+  INSERT INTO test_bool VALUES ( true, true  );
+  INSERT INTO test_bool VALUES (1::boolean,   'true');
+  INSERT INTO test_bool VALUES (111::boolean, 'true');
+#+END_SRC
+
+Проверьте свои предположения практически, выполнив эти команды.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
