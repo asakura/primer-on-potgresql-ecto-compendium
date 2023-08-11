@@ -2870,6 +2870,118 @@ src_sql[:exports code]{SET intervalstyle TO DEFAULT;}
 #+END_SRC
 
 Проверьте свои предположения практически, выполнив эти команды.
+*** Вопрос 31
+Пусть в таблице ~birthdays~ хранятся даты рождения какой-то группы людей.
+Создайте эту таблицу с помощью команды
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  CREATE TABLE birthdays(person text NOT NULL, birthday date NOT NULL);
+#+END_SRC
+
+#+RESULTS:
+: CREATE TABLE
+
+Добавьте в нее несколько строк, например:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  INSERT INTO birthdays VALUES ('Ken Thompson', '1955-03-23');
+  INSERT INTO birthdays VALUES ('Ben Johnson', '1971-03-19');
+  INSERT INTO birthdays VALUES ('Andy Gibson', '1987-08-12');
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+: INSERT 0 1
+: INSERT 0 1
+
+Давайте выберем из таблицы ~birthdays~ строки для всех людей, родившихся в
+каком-то конкретном месяце, например, в марте:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT *
+    FROM birthdays
+   WHERE extract('mon' FROM birthday) = 3;
+#+END_SRC
+
+#+RESULTS:
+| person       |   birthday |
+|--------------+------------|
+| Ken Thompson | 1955-03-23 |
+| Ben Johnson  | 1971-03-19 |
+
+В этой команде в вызове функции ~extract~ имеет место неявное приведение типов,
+т.к. ее вторым параметром должно быть значение типа ~timestamp~. Полагаться на
+неявное приведение типов можно не всегда.
+
+Если нам потребуется выяснить, кто из этих людей достиг возраста, скажем, 40
+лет на момент выполнения запроса, то команда может быть такой (в последнем
+столбце показана дата достижения возраста 40 лет):
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT *,
+         birthday + '40 years'::interval
+    FROM birthdays
+   WHERE birthday + '40 years'::interval < current_timestamp;
+#+END_SRC
+
+#+RESULTS:
+| person       |   birthday | ?column?            |
+|--------------+------------+---------------------|
+| Ken Thompson | 1955-03-23 | 1995-03-23 00:00:00 |
+| Ben Johnson  | 1971-03-19 | 2011-03-19 00:00:00 |
+
+Можно заменить ~current_timestamp~ на ~current_date~:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT *,
+         birthday + '40 years'::interval
+    FROM birthdays
+   WHERE birthday + '40 years'::interval < current_date;
+#+END_SRC
+
+#+RESULTS:
+| person       |   birthday | ?column?            |
+|--------------+------------+---------------------|
+| Ken Thompson | 1955-03-23 | 1995-03-23 00:00:00 |
+| Ben Johnson  | 1971-03-19 | 2011-03-19 00:00:00 |
+
+А вот если мы захотим определить точный возраст каждого человека на текущий
+момент времени, то как получить этот результат? Первый вариант таков:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT *,
+         (current_date::timestamp - birthday::timestamp)::interval
+    FROM birthdays;
+#+END_SRC
+
+#+RESULTS:
+| person       |   birthday | interval   |
+|--------------+------------+------------|
+| Ken Thompson | 1955-03-23 | 24128 days |
+| Ben Johnson  | 1971-03-19 | 18288 days |
+| Andy Gibson  | 1987-08-12 | 12298 days |
+
+Этот вариант не дает результата, представленного в удобной форме: он показывает
+возраст в днях, а для пересчета числа дней в число лет нужны дополнительные
+действия. Хотя, наверное, возможны ситуации, когда требуется определить возраст
+именно в днях.
+
+В PostgreSQL предусмотрена специальная функция, позволяющая решить нашу задачу
+простым способом. Самостоятельно найдите ее описание в документации (см. раздел
+9.9 «Операторы и функции даты/времени») и напишите команду с её использованием.
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT *, age(birthday::timestamp) FROM birthdays;
+#+END_SRC
+
+#+RESULTS:
+| person       |   birthday | age                   |
+|--------------+------------+-----------------------|
+| Ken Thompson | 1955-03-23 | 66 years 21 days      |
+| Ben Johnson  | 1971-03-19 | 50 years 25 days      |
+| Andy Gibson  | 1987-08-12 | 33 years 8 mons 1 day |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
