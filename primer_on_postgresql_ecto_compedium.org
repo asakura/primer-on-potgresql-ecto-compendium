@@ -3622,6 +3622,70 @@ PostgreSQL просматривает при поиске конкретного
 схеме. Если же вы хотите создать объект в конкретной схеме, которая не является
 текущей, то нужно указать ее имя перед именем создаваемого объекта, разделив их
 точкой.
+** Контрольные вопросы и задания
+*** Вопрос 1
+При использовании значений по умолчанию с ключевым словом ~DEFAULT~ возможны и
+ситуации, когда типичным будет не конкретное значение данных, а способ его
+получения. Например, если мы захотим фиксировать в каждой строке таблицы
+«Студенты» имя пользователя базы данных, добавившего эту строку в таблицу, тогда
+необходимо в определение таблицы добавить еще один столбец. Этот столбец по
+умолчанию будет получать значение, возвращаемое функцией ~current_user~.
+
+#+BEGIN_SRC sql :engine postgres :eval no
+  CREATE TABLE students (
+    record_book numeric(5) NOT NULL,
+    name text NOT NULL,
+    doc_ser numeric(4),
+    doc_num numeric(6),
+    who_adds_row text DEFAULT current_user, -- добавленный столбец
+    PRIMARY KEY (record_book)
+  );
+#+END_SRC
+
+Эта функция — ~current_user~ — будет вызываться не при создании таблицы, а при
+вставке каждой строки. При этом в команде ~INSERT~ не требуется указывать
+значение для столбца ~who_adds_row~, поскольку функция ~current_user~ будет
+вызываться самой СУБД PostgreSQL:
+
+#+BEGIN_SRC sql :engine postgres :eval no
+  INSERT INTO students (record_book, name, doc_ser, doc_num)
+    VALUES (12300, 'Иванов Иван Иванович', 0402, 543281);
+#+END_SRC
+
+Давайте пойдем дальше и пожелаем фиксировать не только имя пользователя базы
+данных, добавившего строку в таблицу, но также и момент времени, когда это было
+сделано.
+
+*ОТВЕТ*
+
+#+BEGIN_SRC sql :engine postgres :eval no
+  CREATE TABLE students(
+    record_book numeric(5) NOT NULL,
+    name text NOT NULL,
+    doc_ser numeric(4),
+    doc_num numeric(6),
+    who_adds_row text DEFAULT current_user,
+    inserted_at timestamptz DEFAULT current_timestamp,
+    PRIMARY KEY (record_book)
+  );
+
+  INSERT INTO students (record_book, name, doc_ser, doc_num)
+    VALUES (12300, 'Иванов Иван Иванович', 0402, 543281);
+#+END_SRC
+
+#+RESULTS:
+| CREATE TABLE |
+|--------------|
+| INSERT 0 1   |
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  TABLE students;
+#+END_SRC
+
+#+RESULTS:
+| record_book | name                 | doc_ser | doc_num | who_adds_row | inserted_at                   |
+|-------------+----------------------+---------+---------+--------------+-------------------------------|
+|       12300 | Иванов Иван Иванович |     402 |  543281 | asakura      | 2021-04-15 18:25:37.350046+02 |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
