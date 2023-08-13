@@ -3452,6 +3452,88 @@ REFERENCES students (record_book), ...}
 обратная ситуация, когда нужно удалить столбец из таблицы — для этого есть фраза
 ~DROP COLUMN~. Если нужно добавить ограничение, то помогут фразы ~ADD CHECK~ и
 ~ADD CONSTRAINT~. Если потребовался внешний ключ, то можно добавить и его.
+
+Предположим, что нам понадобилось иметь в базе данных сведения о крейсерской
+скорости полета всех моделей самолетов, которые эксплуатируются в нашей
+авиакомпании.
+
+#+BEGIN_SRC sql :engine postgres :eval no
+  ALTER TABLE airports
+    ADD COLUMN speed integer NOT NULL CHECK (speed >= 300);
+
+  -- аналогично трем следующим командам
+  ALTER TABLE aircrafts ADD COLUMN speed integer;
+  ALTER TABLE aircrafts ALTER COLUMN speed SET NOT NULL;
+  ALTER TABLE aircrafts ADD CHECK (speed >= 300);
+#+END_SRC
+
+Если необходимость наличия того или иного ограничения отпадет, его можно
+удалить:
+
+#+BEGIN_SRC sql :engine postgres :eval no
+  ALTER TABLE aircrafts ALTER COLUMN speed DROP NOT NULL;
+  ALTER TABLE aircrafts DROP CONSTRAINT aircrafts_speed_check;
+#+END_SRC
+
+Если мы решим не усложнять нашу базу данных дополнительной информацией, то можем
+удалить и столбец. Конечно, вовсе не обязательно предварительно удалять
+ограничения, наложенные на этот столбец.
+
+#+BEGIN_SRC sql :engine postgres :eval no
+  ALTER TABLE aircrafts DROP COLUMN speed;
+#+END_SRC
+
+Еще одна полезная возможность команды ~ALTER TABLE~ — изменение типа данных для
+какого-либо столбца:
+
+#+BEGIN_SRC sql :engine postgres :eval no
+  ALTER TABLE airports
+    ALTER COLUMN longitude SET DATA TYPE numeric(5, 2),
+    ALTER COLUMN latitude  SET DATA TYPE numeric(5, 2);
+#+END_SRC
+
+Но если исходный и целевой типы данных относятся к разным группам, тогда
+потребуются некоторые дополнительные усилия с нашей стороны. Для реализации
+такой задачи служит фраза ~USING~ команды ~ALTER TABLE~.
+
+#+BEGIN_SRC sql :engine postgres :eval no
+   ALTER TABLE seats
+     -- в таблице есть ограничение, которое завязано на строковый тип,
+     -- поэтому его нужно удалать
+     DROP CONSTRAINT seats_fare_conditions_check,
+     ALTER COLUMN fare_conditions SET DATA TYPE integer
+       USING ( CASE WHEN fare_conditions = 'Economy'  THEN 1
+                    WHEN fare_conditions = 'Business' THEN 2
+                    ELSE 3 END
+       );
+#+END_SRC
+
+Внешний ключ можно добавить такой командой:
+
+#+BEGIN_SRC sql :engine postgres :eval no
+  ALTER TABLE seats
+    ADD FOREIGN KEY (fare_conditions) REFERENCES fare_conditions (fare_conditions_code);
+#+END_SRC
+
+А столбец переименовать такой:
+
+#+BEGIN_SRC sql :engine postgres :eval no
+   ALTER TABLE seats
+  RENAME COLUMN fare_conditions TO fare_conditions_code;
+#+END_SRC
+
+А ограничение можно переименовать вот так:
+
+#+BEGIN_SRC sql :engine postgres :eval no
+   ALTER TABLE seats
+  RENAME CONSTRAINT seats_fare_conditions_fkey TO seats_fare_conditions_code_fkey;
+#+END_SRC
+
+Добавить ограничение уникальности по столбцу возможно так:
+
+#+BEGIN_SRC sql :engine postgres :eval no
+  ALTER TABLE fare_conditions ADD UNIQUE (fare_conditions_name);
+#+END_SRC
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
