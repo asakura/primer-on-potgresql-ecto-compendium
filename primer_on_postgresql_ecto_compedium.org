@@ -3941,6 +3941,121 @@ null);}. Она даст пустой результат (т.е. ~NULL~).
 |       12302 | Иванов Иван Иванович |     402 |         |
 |       12303 | Иванов Иван Иванович |         |         |
 |       12304 | Иванов Иван Иванович |         |         |
+*** Вопрос 6
+Модифицируйте определения таблиц ~students~ и ~progress~. В таблице ~students~ в
+качестве первичного ключа назначьте комбинацию атрибутов ~doc_ser~ и ~doc_num~,
+а в таблице ~progress~ соответствующим образом измените определение внешнего
+ключа.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  CREATE TABLE students(
+    record_book numeric(5) NOT NULL UNIQUE,
+    name        text       NOT NULL,
+    doc_ser     numeric(4),
+    doc_num     numeric(6),
+
+    PRIMARY KEY (doc_ser, doc_num)
+  );
+#+END_SRC
+
+#+RESULTS:
+: CREATE TABLE
+
+Обратите внимание, что для атрибутов ~doc_ser~ и ~doc_num~ можно не указывать
+ограничение ~NOT NULL~: они входят в состав первичного ключа, а в нем
+~NULL~-значения не допускаются, поэтому ограничение ~NOT NULL~ фактически
+подразумевается при включении атрибута в состав первичного ключа.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  CREATE TABLE progress(
+    doc_ser   numeric(4),
+    doc_num   numeric(6),
+    subject   text       NOT NULL,
+    acad_year text       NOT NULL,
+    term      numeric(1) NOT NULL CHECK (term = 1 OR term = 2),
+    mark      numeric(1) NOT NULL CHECK (mark >= 3 AND mark <= 5) DEFAULT 5,
+
+    FOREIGN KEY (doc_ser, doc_num)
+      REFERENCES students (doc_ser, doc_num)
+      ON DELETE CASCADE
+      ON UPDATE CASCADE
+  );
+#+END_SRC
+
+#+RESULTS:
+: CREATE TABLE
+
+Теперь и первичный, и внешний ключи — составные. Проверьте их действие, добавив
+несколько строк в каждую таблицу.
+
+*ОТВЕТ*
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  \a
+  \d students
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+                   Table "public.students"
+   Column    |     Type     | Collation | Nullable | Default
+-------------+--------------+-----------+----------+---------
+ record_book | numeric(5,0) |           | not null |
+ name        | text         |           | not null |
+ doc_ser     | numeric(4,0) |           | not null |
+ doc_num     | numeric(6,0) |           | not null |
+Indexes:
+    "students_pkey" PRIMARY KEY, btree (doc_ser, doc_num)
+    "students_record_book_key" UNIQUE CONSTRAINT, btree (record_book)
+Referenced by:
+    TABLE "progress" CONSTRAINT "progress_doc_ser_doc_num_fkey" FOREIGN KEY (doc_ser, doc_num) REFERENCES students(doc_ser, doc_num) ON UPDATE CASCADE ON DELETE CASCADE
+
+#+end_example
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  \a
+  \d progress
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+                  Table "public.progress"
+  Column   |     Type     | Collation | Nullable | Default
+-----------+--------------+-----------+----------+---------
+ doc_ser   | numeric(4,0) |           |          |
+ doc_num   | numeric(6,0) |           |          |
+ subject   | text         |           | not null |
+ acad_year | text         |           | not null |
+ term      | numeric(1,0) |           | not null |
+ mark      | numeric(1,0) |           | not null | 5
+Check constraints:
+    "progress_mark_check" CHECK (mark >= 3::numeric AND mark <= 5::numeric)
+    "progress_term_check" CHECK (term = 1::numeric OR term = 2::numeric)
+Foreign-key constraints:
+    "progress_doc_ser_doc_num_fkey" FOREIGN KEY (doc_ser, doc_num) REFERENCES students(doc_ser, doc_num) ON UPDATE CASCADE ON DELETE CASCADE
+
+#+end_example
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  INSERT INTO students (record_book, name, doc_ser, doc_num)
+    VALUES (12300, 'Иванов Иван Иванович', 0402, 543281);
+
+  INSERT INTO progress (doc_ser, doc_num, subject, acad_year, term)
+    VALUES (0402, 543281, 'Физика', '2016/2017', 1);
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+: INSERT 0 1
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  TABLE students;
+#+END_SRC
+
+#+RESULTS:
+| record_book | name                 | doc_ser | doc_num |
+|-------------+----------------------+---------+---------|
+|       12300 | Иванов Иван Иванович |     402 |  543281 |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
