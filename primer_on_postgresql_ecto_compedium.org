@@ -3818,6 +3818,57 @@ PostgreSQL просматривает при поиске конкретного
 |       12300 | DBA     | first     |    1 |    5 | экзамен   |
 |       12300 | DBA     | first     |    1 |    1 | зачет     |
 |       12300 | DBA     | first     |      |    1 | зачет     |
+*** Вопрос 4
+В определении таблицы ~progress~ для атрибута ~mark~ не только задано
+ограничение ~CHECK~, но и установлено значение по умолчанию с помощью ключевого
+слова ~DEFAULT~:
+
+#+BEGIN_SRC sql :engine postgres :eval no
+  ...
+  mark numeric(1) NOT NULL CHECK (mark >= 3 AND mark <= 5) DEFAULT 5,
+  ...
+#+END_SRC
+
+Как вы думаете, что будет, если в ограничении ~DEFAULT~ мы «случайно» допустим
+ошибку, написав ~DEFAULT 6~? Если в команде ~INSERT~ не указать значение для
+атрибута ~mark~, то на каком этапе эта ошибка будет выявлена: уже на этапе
+создания таблицы или только при вставке строки в нее? Вот эта команда может быть
+вам полезной для проверки гипотезы, посколькув ней отсутствует передаваемое
+значение для атрибута ~mark~:
+
+#+BEGIN_SRC sql :engine postgres :eval no
+  INSERT INTO progress (record_book, subject, acad_year, term)
+    VALUES (12300, 'Физика', '2016/2017', 1);
+#+END_SRC
+
+*ОТВЕТ*
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  DROP TABLE IF EXISTS progress;
+
+  CREATE TABLE progress (
+    record_book numeric(5) NOT NULL,
+    subject     text       NOT NULL,
+    acad_year   text       NOT NULL,
+    term        numeric(1) NOT NULL CHECK (term = 1 OR term = 2),
+    mark        numeric(1) NOT NULL CHECK (mark >= 3 AND mark <= 5) DEFAULT 6
+  );
+#+END_SRC
+
+#+RESULTS:
+: DROP TABLE
+: CREATE TABLE
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  INSERT INTO progress (record_book, subject, acad_year, term)
+    VALUES (12300, 'Физика', '2016/2017', 1);
+#+END_SRC
+
+#+RESULTS:
+: ERROR:  new row for relation "progress" violates check constraint "progress_mark_check"
+: DETAIL:  Failing row contains (12300, Физика, 2016/2017, 1, 6).
+
+Ошибка будет выявлена на этапе вставки строки в таблицу.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
