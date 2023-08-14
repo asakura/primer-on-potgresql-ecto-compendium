@@ -3869,6 +3869,78 @@ PostgreSQL просматривает при поиске конкретного
 : DETAIL:  Failing row contains (12300, Физика, 2016/2017, 1, 6).
 
 Ошибка будет выявлена на этапе вставки строки в таблицу.
+*** Вопрос 5
+В стандарте SQL сказано, что при наличии ограничения уникальности, включающего
+один или более столбцов, все же возможны повторяющиеся значения этих столбцов в
+разных строках, но лишь в том случае, если это значения ~NULL~. PostgreSQL
+придерживается такого же подхода.
+
+Модифицируйте определение таблицы ~students~, добавив ограничение уникальности
+по двум столбцам: ~doc_ser~ и ~doc_num~. А затем проверьте выше приведенное
+утверждение, добавив в таблицу не только строки, содержащие конкретные значения
+этих двух столбцов, но также и по две строки, имеющие следующие свойства:
+- одинаковые значения столбца ~doc_ser~ и ~NULL~-значения столбца ~doc_num~;
+- ~NULL~-значения столбца ~doc_num~ и столбца ~doc_ser~.
+
+Подобные вещи возможны, так как ~NULL~-значения не считаются совпадающими. Это
+можно проверить с помощью команды: src_sql[:exports code]{SELECT (null =
+null);}. Она даст пустой результат (т.е. ~NULL~).
+
+*ОТВЕТ*
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  DROP TABLE IF EXISTS students;
+
+  CREATE TABLE students (
+    record_book numeric(5) NOT NULL,
+    name text NOT NULL,
+    doc_ser numeric(4),
+    doc_num numeric(6),
+    PRIMARY KEY (record_book),
+    UNIQUE (doc_ser, doc_num)
+  );
+#+END_SRC
+
+#+RESULTS:
+: DROP TABLE
+: CREATE TABLE
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  INSERT INTO students (record_book, name, doc_ser, doc_num)
+    VALUES (12300, 'Иванов Иван Иванович', 0402, 543281);
+
+  INSERT INTO students (record_book, name, doc_ser, doc_num)
+    VALUES (12301, 'Иванов Иван Иванович', 0402, NULL);
+
+  INSERT INTO students (record_book, name, doc_ser, doc_num)
+    VALUES (12302, 'Иванов Иван Иванович', 0402, NULL);
+
+  INSERT INTO students (record_book, name, doc_ser, doc_num)
+    VALUES (12303, 'Иванов Иван Иванович', NULL, NULL);
+
+  INSERT INTO students (record_book, name, doc_ser, doc_num)
+    VALUES (12304, 'Иванов Иван Иванович', NULL, NULL);
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+: INSERT 0 1
+: INSERT 0 1
+: INSERT 0 1
+: INSERT 0 1
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  TABLE students;
+#+END_SRC
+
+#+RESULTS:
+| record_book | name                 | doc_ser | doc_num |
+|-------------+----------------------+---------+---------|
+|       12300 | Иванов Иван Иванович |     402 |  543281 |
+|       12301 | Иванов Иван Иванович |     402 |         |
+|       12302 | Иванов Иван Иванович |     402 |         |
+|       12303 | Иванов Иван Иванович |         |         |
+|       12304 | Иванов Иван Иванович |         |         |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
