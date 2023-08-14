@@ -3782,6 +3782,42 @@ PostgreSQL просматривает при поиске конкретного
 |-------------+---------+-----------+------+------+-----------|
 |       12300 | DBA     | first     |    1 |    5 | экзамен   |
 |       12300 | DBA     | first     |    1 |    1 | зачет     |
+*** Вопрос 3
+В определении таблицы ~progress~ на атрибуты ~term~ и ~mark~ наложены как
+ограничения ~CHECK~, так и ограничение ~NOT NULL~. Возникает вопрос: не является
+ли ограничение ~NOT NULL~ избыточным? Ведь в ограничении ~CHECK~ явно указаны
+допустимые значения.
+
+Проверьте гипотезу об избыточности ограничения ~NOT NULL~ в данном случае. Для
+этого модифицируйте таблицу, убрав ограничение ~NOT NULL~, и попробуйте добавить
+в нее строку с отсутствующим значением атрибута ~term~ (или ~mark~).
+
+*ОТВЕТ*
+
+#+BEGIN_SRC sql :engine postgres :eval no
+  ALTER TABLE progress ALTER COLUMN term DROP NOT NULL;
+
+  INSERT INTO progress (record_book, subject, acad_year, mark, test_form)
+    VALUES (12300, 'DBA', 'first', 1, 'зачет');
+#+END_SRC
+
+#+RESULTS:
+: ALTER TABLE
+: INSERT 0 1
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  TABLE progress;
+#+END_SRC
+
+Ограничение ~NOT NULL~ не было избыточным, так как ограничение явно не проверяло
+на ~NULL~.
+
+#+RESULTS:
+| record_book | subject | acad_year | term | mark | test_form |
+|-------------+---------+-----------+------+------+-----------|
+|       12300 | DBA     | first     |    1 |    5 | экзамен   |
+|       12300 | DBA     | first     |    1 |    1 | зачет     |
+|       12300 | DBA     | first     |      |    1 | зачет     |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
