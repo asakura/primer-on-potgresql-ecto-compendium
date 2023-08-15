@@ -4642,6 +4642,53 @@ src_sql[:exports code]{ALTER TABLE students ADD CHECK (...);}
 
 #+RESULTS:
 : ALTER TABLE
+*** Вопрос 10
+В таблице ~students~ атрибут ~doc_ser~ имеет числовой тип, однако в сериях таких
+документов могут встречаться лидирующие нули, которые в числовых столбцах не
+сохраняются. Например, при записи значения серии «0402» первый ноль не
+сохранится. Модифицируйте таблицу ~students~, заменив числовой тип данных на
+символьный, например, ~character~. Как вы думаете, эта операция пройдет без
+затруднений или они все же возможны? Проверьте ваши предположения, выполнив
+модификацию.
+
+*ОТВЕТ*
+
+#+BEGIN_SRC sql :engine postgres :results value vebatim :eval no
+  CREATE TABLE students (
+    record_book numeric(5) NOT NULL,
+    name text NOT NULL,
+    doc_ser numeric(4),
+    doc_num numeric(6),
+
+    PRIMARY KEY (record_book),
+    UNIQUE (doc_ser, doc_num)
+  );
+
+  INSERT INTO students (record_book, name, doc_ser, doc_num)
+    VALUES (12300, 'Иванов Иван Иванович', 0402, 543281);
+
+  ALTER TABLE students
+    ALTER COLUMN doc_ser SET DATA TYPE char(4);
+
+  INSERT INTO students (record_book, name, doc_ser, doc_num)
+    VALUES (12301, 'Иванов Иван Иванович', '0402', 543281);
+#+END_SRC
+
+#+RESULTS:
+: CREATE TABLE
+: INSERT 0 1
+: ALTER TABLE
+: INSERT 0 1
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  TABLE students;
+#+END_SRC
+
+#+RESULTS:
+| record_book | name                 | doc_ser | doc_num |
+|-------------+----------------------+---------+---------|
+|       12300 | Иванов Иван Иванович |     402 |  543281 |
+|       12301 | Иванов Иван Иванович |    0402 |  543281 |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
