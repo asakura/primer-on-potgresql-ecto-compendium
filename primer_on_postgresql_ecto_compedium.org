@@ -4488,6 +4488,160 @@ ALTER TABLE
 |-------------+------------+-----------+------+------|
 |       12300 |          1 | 2016/2017 |    1 |    5 |
 |       12300 |          2 | 2016/2017 |    2 |    5 |
+*** Вопрос 9
+В таблице ~students~ есть текстовый атрибут ~name~, на который наложено
+ограничение ~NOT NULL~. Как вы думаете, что будет, если при вводе новой строки в
+эту таблицу дать атрибуту ~name~ в качестве значения пустую строку? Например:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  INSERT INTO students (record_book, name, doc_ser, doc_num)
+    VALUES (12300, '', 0402, 543281);
+#+END_SRC
+
+Наверное, проектируя эту таблицу, мы хотели бы все же, чтобы пустые строки в
+качестве значения атрибута ~name~ не проходили в базу данных? Какое решение вы
+можете предложить? Видимо, нужно добавить ограничение ~CHECK~ для столбца
+~name~. Если вы еще не изучили команду ~ALTER TABLE~, то удалите таблицу
+~students~ и создайте ее заново с учетом нового ограничения, а если вы уже
+познакомились с командой ~ALTER TABLE~, то сделайте так:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  ALTER TABLE students ADD CHECK (name <> '');
+#+END_SRC
+
+Добавив ограничение, попробуйте теперь вставить в таблицу ~students~ строку
+(~row~), в которой значение атрибута ~name~ было бы пустой строкой (~string~).
+
+Давайте продолжим эксперименты и предложим в качестве значения атрибута ~name~
+строку, содержащую сначала один пробел, а потом — два пробела.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  INSERT INTO students VALUES (12346, ' ', 0406, 112233);
+  INSERT INTO students VALUES (12347, '  ', 0407, 112234);
+#+END_SRC
+
+Для того чтобы «увидеть» эти пробелы в выборке, сделаем так:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  SELECT *, length(name) FROM students;
+#+END_SRC
+
+Оказывается, эти невидимые значения имеют ненулевую длину. Что делать, чтобы не
+допустить таких значений-невидимок? Один из способов: возложить проверку таких
+ситуаций на прикладную программу. А что можно сделать на уровне определения
+таблицы ~students~? Какое ограничение нужно предложить? В разделе 9.4
+документации «Строковые функции и операторы» есть функция ~trim~. Попробуйте
+воспользоваться ею. Если вы еще не изучили команду ~ALTER TABLE~, то удалите
+таблицу ~students~ и создайте ее заново с учетом нового ограничения, а если уже
+познакомились с ней, то сделайте так:
+
+src_sql[:exports code]{ALTER TABLE students ADD CHECK (...);}
+
+Есть ли подобные слабые места в таблице ~progress~?
+
+*ОТВЕТ*
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  CREATE TABLE students (
+    record_book numeric(5) NOT NULL,
+    name text NOT NULL,
+    doc_ser numeric(4),
+    doc_num numeric(6),
+
+    PRIMARY KEY (record_book),
+    UNIQUE (doc_ser, doc_num)
+  );
+
+  CREATE TABLE progress (
+    record_book numeric(5) NOT NULL,
+    subject     text       NOT NULL,
+    acad_year   text       NOT NULL,
+    term        numeric(1) NOT NULL CHECK (term = 1 OR term = 2),
+    mark        numeric(1) NOT NULL CHECK (mark >= 3 AND mark <= 5) DEFAULT 5,
+
+    FOREIGN KEY (record_book) REFERENCES students (record_book)
+  );
+#+END_SRC
+
+#+RESULTS:
+: CREATE TABLE
+: CREATE TABLE
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  INSERT INTO students (record_book, name, doc_ser, doc_num)
+    VALUES (12300, '', 0402, 543281);
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  TABLE students;
+#+END_SRC
+
+#+RESULTS:
+| record_book | name | doc_ser | doc_num |
+|-------------+------+---------+---------|
+|       12300 |      |     402 |  543281 |
+
+*ОТВЕТ*: пустая строка не равняятся ~NULL~.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  DELETE FROM students;
+  ALTER TABLE students ADD CHECK (name <> '');
+#+END_SRC
+
+#+RESULTS:
+: DELETE 1
+: ALTER TABLE
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  INSERT INTO students VALUES (12346, ' ', 0406, 112233);
+  INSERT INTO students VALUES (12347, '  ', 0407, 112234);
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+: INSERT 0 1
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT *, length(name) FROM students;
+#+END_SRC
+
+#+RESULTS:
+| record_book | name | doc_ser | doc_num | length |
+|-------------+------+---------+---------+--------|
+|       12346 |      |     406 |  112233 |      1 |
+|       12347 |      |     407 |  112234 |      2 |
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  DELETE FROM students;
+  ALTER TABLE students ADD CHECK (trim(name) <> '');
+#+END_SRC
+
+#+RESULTS:
+: DELETE 2
+: ALTER TABLE
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
+  INSERT INTO students VALUES (12346, ' ', 0406, 112233);
+  INSERT INTO students VALUES (12347, '  ', 0407, 112234);
+#+END_SRC
+
+#+RESULTS:
+: ERROR:  new row for relation "students" violates check constraint "students_name_check1"
+: DETAIL:  Failing row contains (12346,  , 406, 112233).
+
+*ОТВЕТ*: В таблице ~progress~ подобные слабые места. Можно защититься так:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval n
+  ALTER TABLE progress
+    ADD CHECK (trim(subject) <> ''),
+    ADD CHECK (trim(acad_year) <> '');
+#+END_SRC
+
+#+RESULTS:
+: ALTER TABLE
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
