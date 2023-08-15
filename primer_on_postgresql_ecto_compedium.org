@@ -4361,6 +4361,133 @@ ALTER TABLE
 | record_book | subject | acad_year | term | mark |
 |-------------+---------+-----------+------+------|
 |           1 | Физика  | 2016/2017 |    1 |    5 |
+*** Вопрос 8
+В таблице ~progress~ есть атрибут ~subject~. Это текстовый атрибут. Одинаковые
+наименования учебных дисциплин записываются в таблицу ~progress~ многократно.
+Создайте еще одну таблицу — ~subjects~, в которой будет два атрибута:
+~subject_id~ и ~subject~. Тип данных первого из них будет ~integer~, а второго —
+~text~. В качестве первичного ключа будет служить ~subject_id~, а второй атрибут
+будет уникальным. Введите в новую таблицу две три строки для различных учебных
+дисциплин.
+
+Модифицируйте таблицу ~progress~, заменив атрибут ~subject~ на ~subject_id~. Тип
+данных нового атрибута будет ~integer~. Поскольку тип данных изменится, то для
+замены первоначальных значений, хранящихся в этом столбце, на новые придется
+использовать конструкцию ~USING~ (о ней говорится в тексте главы).
+
+Добавьте в определение таблицы ~progress~ еще один внешний ключ, который будет
+ссылаться на таблицу ~subjects~. В составе этого внешнего ключа будет только
+один атрибут — ~subject_id~. Мы видим, что таблица может иметь больше одного
+внешнего ключа. Таким образом, структура связей в реальной базе данных может
+оказаться весьма сложной.
+
+Теперь введите несколько строк и в таблицу ~progress~, учитывая ее связь с новой
+таблицей ~subjects~.
+
+*ОТВЕТ*
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  CREATE TABLE students (
+    record_book numeric(5) NOT NULL,
+    name text NOT NULL,
+    doc_ser numeric(4),
+    doc_num numeric(6),
+
+    PRIMARY KEY (record_book),
+    UNIQUE (doc_ser, doc_num)
+  );
+
+  CREATE TABLE progress (
+    record_book numeric(5) NOT NULL,
+    subject     text       NOT NULL,
+    acad_year   text       NOT NULL,
+    term        numeric(1) NOT NULL CHECK (term = 1 OR term = 2),
+    mark        numeric(1) NOT NULL CHECK (mark >= 3 AND mark <= 5) DEFAULT 5,
+
+    FOREIGN KEY (record_book) REFERENCES students (record_book)
+  );
+#+END_SRC
+
+#+RESULTS:
+: CREATE TABLE
+: CREATE TABLE
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  CREATE TABLE subjects (
+    subject_id integer,
+    subject    text NOT NULL,
+
+    PRIMARY KEY (subject_id),
+    UNIQUE (subject)
+  );
+#+END_SRC
+
+#+RESULTS:
+: CREATE TABLE
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  INSERT INTO students (record_book, name, doc_ser, doc_num)
+    VALUES (12300, 'Иванов Иван Иванович', 0402, 543281);
+
+  INSERT INTO progress (record_book, subject, acad_year, term)
+    VALUES (12300, 'Физика', '2016/2017', 1);
+
+  INSERT INTO subjects (subject_id, subject)
+    VALUES (1, 'Физика'),
+           (2, 'Математика');
+#+END_SRC
+
+#+RESULTS:
+: INSERT 0 1
+: INSERT 0 1
+: INSERT 0 2
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval n
+  ALTER TABLE progress
+    RENAME COLUMN subject TO subject_id;
+
+  ALTER TABLE progress
+    ALTER COLUMN subject_id SET DATA TYPE integer
+      USING ( CASE WHEN subject_id = 'Физика' THEN 1
+                   WHEN subject_id = 'Математика' THEN 2
+                   ELSE NULL END
+      );
+#+END_SRC
+
+#+RESULTS:
+: ALTER TABLE
+: ALTER TABLE
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  TABLE progress;
+#+END_SRC
+
+#+RESULTS:
+| record_book | subject_id | acad_year | term | mark |
+|-------------+------------+-----------+------+------|
+|       12300 |          1 | 2016/2017 |    1 |    5 |
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  ALTER TABLE progress
+    ADD FOREIGN KEY (subject_id) REFERENCES subjects (subject_id);
+
+  INSERT INTO progress (record_book, subject_id, acad_year, term)
+    VALUES (12300, 2, '2016/2017', 2);
+#+END_SRC
+
+#+RESULTS:
+: ALTER TABLE
+: INSERT 0 1
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  TABLE progress;
+#+END_SRC
+
+#+RESULTS:
+| record_book | subject_id | acad_year | term | mark |
+|-------------+------------+-----------+------+------|
+|       12300 |          1 | 2016/2017 |    1 |    5 |
+|       12300 |          2 | 2016/2017 |    2 |    5 |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
