@@ -4771,6 +4771,66 @@ Referenced by:
 #+end_example
 
 *TODO* ответить на вопрос
+*** Вопрос 12
+Команда ~ALTER TABLE~ позволяет переименовать таблицу. Например:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  ALTER TABLE table_name RENAME TO new_table_name;
+#+END_SRC
+
+Поскольку в командах создания таблиц базы данных «Авиаперевозки» мы не указывали
+имена ограничений для первичных и внешних ключей, то их имена были сформированы
+автоматически самой СУБД. Как вы думаете, получили ли эти ограничения новые
+имена после переименования таблицы?
+
+Проверьте ваши предположения, выполнив такую операцию с одной из таблиц базы
+данных «Авиаперевозки», имеющих внешние ключи.
+
+*ОТВЕТ*
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval n
+  ALTER TABLE flights RENAME TO полёты;
+#+END_SRC
+
+#+RESULTS:
+: ALTER TABLE
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  \a
+  \d полёты
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+                               Table "public.полёты"
+         Column         |           Type           | Collation | Nullable | Default
+------------------------+--------------------------+-----------+----------+---------
+ flight_id              | integer                  |           | not null |
+ flight_no              | character(6)             |           | not null |
+ scheduled_departure    | timestamp with time zone |           | not null |
+ scheduled_arrival      | timestamp with time zone |           | not null |
+ departure_airport_code | character(3)             |           | not null |
+ arrival_airport_code   | character(3)             |           | not null |
+ status                 | character varying(20)    |           | not null |
+ aircraft_code          | character(3)             |           | not null |
+ actual_departure       | timestamp with time zone |           |          |
+ actual_arrival         | timestamp with time zone |           |          |
+Indexes:
+    "flights_pkey" PRIMARY KEY, btree (flight_id)
+    "flights_flight_no_scheduled_departure_index" UNIQUE CONSTRAINT, btree (flight_no, scheduled_departure)
+Check constraints:
+    "flights_actual_arrival_time_check" CHECK (actual_arrival IS NULL OR actual_departure IS NOT NULL AND actual_arrival IS NOT NULL AND actual_arrival > actual_departure)
+    "flights_arrival_time_check" CHECK (scheduled_arrival > scheduled_departure)
+    "flights_status_check" CHECK (status::text = ANY (ARRAY['On Time'::text, 'Delayed'::text, 'Departed'::text, 'Arrived'::text, 'Scheduled'::text, 'Cancelled'::text]))
+Foreign-key constraints:
+    "flights_aircraft_code_fkey" FOREIGN KEY (aircraft_code) REFERENCES aircrafts(aircraft_code)
+    "flights_arrival_airport_code_fkey" FOREIGN KEY (arrival_airport_code) REFERENCES airports(airport_code)
+    "flights_departure_airport_code_fkey" FOREIGN KEY (departure_airport_code) REFERENCES airports(airport_code)
+Referenced by:
+    TABLE "ticket_flights" CONSTRAINT "ticket_flights_flight_id_fkey" FOREIGN KEY (flight_id) REFERENCES "полёты"(flight_id)
+#+end_example
+
+Ограничения новые имена не получат. Их нужно переименовать вручную.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
