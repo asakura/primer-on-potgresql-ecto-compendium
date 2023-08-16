@@ -4916,6 +4916,41 @@ Referenced by:
 #+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
   REFRESH MATERIALIZED VIEW routes;
 #+END_SRC
+*** Вопрос 17
+Представления могут быть, условно говоря, вертикальными и горизонтальными. При
+создании вертикального представления в список его столбцов включается лишь часть
+столбцов базовой таблицы (таблиц). Например:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  CREATE VIEW airports_names AS
+    SELECT airport_code, airport_name, city
+      FROM airports;
+
+  SELECT * FROM airports_names;
+#+END_SRC
+
+В горизонтальное представление включаются не все строки базовой таблицы
+(таблиц), а производится их отбор с помощью фраз ~WHERE~ или ~HAVING~.
+
+Например:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  CREATE VIEW siberian_airports AS
+    SELECT * FROM airports WHERE city = 'Новосибирск' OR city = 'Кемерово';
+
+  SELECT * FROM siberian_airports;
+#+END_SRC
+
+Конечно, вполне возможен и смешанный вариант, когда ограничивается как список
+столбцов, так и множество строк при создании представления.
+
+Подумайте, какие представления было бы целесообразно создать для нашей базы
+данных «Авиаперевозки». Необходимо учесть наличие различных групп пользователей,
+например: пилоты, диспетчеры, пассажиры, кассиры.
+
+Создайте представления и проверьте их в работе.
+
+*TODO* ответить на вопрос
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
