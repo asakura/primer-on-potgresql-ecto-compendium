@@ -4831,6 +4831,57 @@ Referenced by:
 #+end_example
 
 Ограничения новые имена не получат. Их нужно переименовать вручную.
+*** Вопрос 13
+И представление ~flights_v~, и материализованное представление ~routes~
+построены на основе таблиц ~flights~ и ~airports~. Логично предположить, что при
+каскадном удалении, например, таблицы «Аэропорты», представление «Рейсы» будет
+также удалено, поскольку при удалении базовой таблицы этому представлению просто
+неоткуда будет брать данные.
+
+А что вы можете предположить насчет материализованного представления «Маршруты»:
+будет ли оно также удалено или нет? Ведь оно уже содержит данные, в отличие от
+обычного представления. Так ли, условно говоря, сильна его связь с таблицами, на
+основе которых оно сконструировано?
+
+Проведите необходимые эксперименты, начав с команды
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  DROP TABLE airports;
+#+END_SRC
+
+Если вам потребуется восстановить все объекты базы данных, то вы всегда сможете
+воспользоваться файлом ~demo_small.sql~ и просто повторить процедуру
+развертывания учебной базы данных, которая описана в главе 2. Поэтому смело
+экспериментируйте с таблицами и представлениями.
+
+*ОТВЕТ*
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :exports both :eval no
+  DROP TABLE airports;
+#+END_SRC
+
+#+RESULTS:
+: ERROR:  cannot drop table airports because other objects depend on it
+: DETAIL:  view flights_v depends on table airports
+: view routes depends on table airports
+: constraint flights_arrival_airport_code_fkey on table "полёты" depends on table airports
+: constraint flights_departure_airport_code_fkey on table "полёты" depends on table airports
+: HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  DROP TABLE airports CASCADE;
+#+END_SRC
+
+#+RESULTS:
+: DROP TABLE
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  \a
+  \d routes
+#+END_SRC
+
+#+RESULTS:
+: error: Did not find any relation named "routes".
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
