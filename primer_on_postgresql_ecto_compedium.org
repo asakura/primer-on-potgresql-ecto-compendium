@@ -4689,6 +4689,88 @@ src_sql[:exports code]{ALTER TABLE students ADD CHECK (...);}
 |-------------+----------------------+---------+---------|
 |       12300 | Иванов Иван Иванович |     402 |  543281 |
 |       12301 | Иванов Иван Иванович |    0402 |  543281 |
+*** Вопрос 11
+В таблице ~flights~ есть ограничение, которое регулирует соотношения значений
+фактического времени вылета и фактического времени прилета. Как вы думаете, не
+является ли выражение ~actual_arrival IS NOT NULL~ во второй части условного
+оператора ~OR~ избыточным?
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  CREATE TABLE flights (
+    ...
+    CHECK ( actual_arrival IS NULL OR
+           ( actual_departure IS NOT NULL AND
+             actual_arrival IS NOT NULL AND
+             actual_arrival > actual_departure
+           )
+    ),
+    ...
+#+END_SRC
+
+Проверьте ваши предположения на практике. Для этого сначала удалите существующее
+ограничение с помощью команды
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  ALTER TABLE flights DROP CONSTRAINT имя-ограничения;
+#+END_SRC
+
+Как определить имя этого ограничения? С помощью команды ~\d flights~ получите
+описание таблицы ~flights~, а в нем есть названия всех ограничений. Затем
+создайте это же ограничение, но в модифицированном виде:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  ALTER TABLE flights
+    ADD CHECK ( actual_arrival IS NULL OR
+               ( actual_departure IS NOT NULL AND
+                 actual_arrival > actual_departure
+               )
+    );
+#+END_SRC
+
+Попробуйте добавить в таблицу ~flights~ две-три строки, подбирая такие значения
+атрибутов ~actual_departure~ и ~actual_arrival~, чтобы проверить все возможные
+исходы этих проверок. Конечно, вместо добавления новых строк можно
+модифицировать одну и ту же строку с помощью команды ~UPDATE~.
+
+*ОТВЕТ*
+
+#+BEGIN_SRC sql :engine postgres :exports both :results value verbatim :eval no
+  \a
+  \d flights
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+                               Table "public.flights"
+         Column         |           Type           | Collation | Nullable | Default
+------------------------+--------------------------+-----------+----------+---------
+ flight_id              | integer                  |           | not null |
+ flight_no              | character(6)             |           | not null |
+ scheduled_departure    | timestamp with time zone |           | not null |
+ scheduled_arrival      | timestamp with time zone |           | not null |
+ departure_airport_code | character(3)             |           | not null |
+ arrival_airport_code   | character(3)             |           | not null |
+ status                 | character varying(20)    |           | not null |
+ aircraft_code          | character(3)             |           | not null |
+ actual_departure       | timestamp with time zone |           |          |
+ actual_arrival         | timestamp with time zone |           |          |
+Indexes:
+    "flights_pkey" PRIMARY KEY, btree (flight_id)
+    "flights_flight_no_scheduled_departure_index" UNIQUE CONSTRAINT, btree (flight_no, scheduled_departure)
+Check constraints:
+    "flights_actual_arrival_time_check" CHECK (actual_arrival IS NULL OR actual_departure IS NOT NULL AND actual_arrival IS NOT NULL AND actual_arrival > actual_departure)
+    "flights_arrival_time_check" CHECK (scheduled_arrival > scheduled_departure)
+    "flights_status_check" CHECK (status::text = ANY (ARRAY['On Time'::text, 'Delayed'::text, 'Departed'::text, 'Arrived'::text, 'Scheduled'::text, 'Cancelled'::text]))
+Foreign-key constraints:
+    "flights_aircraft_code_fkey" FOREIGN KEY (aircraft_code) REFERENCES aircrafts(aircraft_code)
+    "flights_arrival_airport_code_fkey" FOREIGN KEY (arrival_airport_code) REFERENCES airports(airport_code)
+    "flights_departure_airport_code_fkey" FOREIGN KEY (departure_airport_code) REFERENCES airports(airport_code)
+Referenced by:
+    TABLE "ticket_flights" CONSTRAINT "ticket_flights_flight_id_fkey" FOREIGN KEY (flight_id) REFERENCES flights(flight_id)
+
+#+end_example
+
+*TODO* ответить на вопрос
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
