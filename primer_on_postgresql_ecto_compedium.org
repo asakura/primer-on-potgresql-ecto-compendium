@@ -5024,6 +5024,29 @@ Referenced by:
 |           321 | Airbus A321-200 |  5600 |
 |           319 | Airbus A319-100 |  6700 |
 
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Aircraft,
+    where: like(a.model, "Airbus%"),
+    select: map(a, [:aircraft_code, :model, :range])
+
+  # macro example
+  Aircraft
+  |> where([a], like(a.model, "Airbus%"))
+  |> select([a], map(a, [:aircraft_code, :model, :range]))
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 19:09:40.292 [debug] QUERY OK source="aircrafts" db=0.6ms idle=214.5ms
+: SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 WHERE (a0."model" LIKE 'Airbus%') []
+: >>> :
+: [
+:   %{aircraft_code: "320", model: "Airbus A320-200", range: 5700},
+:   %{aircraft_code: "321", model: "Airbus A321-200", range: 5600},
+:   %{aircraft_code: "319", model: "Airbus A319-100", range: 6700}
+: ]
+
 Шаблон в операторе ~LIKE~ всегда покрывает всю анализируемую строку. Если по
 тому столбцу, к которому применяется оператор ~LIKE~, создан индекс для
 ускорения доступа к данным, то при наличии символа ~%~ в начале шаблона этот
@@ -5049,6 +5072,29 @@ Referenced by:
 | SU9           | Sukhoi Superjet-100 |  3000 |
 | CN1           | Cessna 208 Caravan  |  1200 |
 | CR2           | Bombardier CRJ-200  |  2700 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Aircraft,
+    where: not like(a.model, "Airbus%") and not like(a.model, "Boeing%"),
+    select: map(a, [:aircraft_code, :model, :range])
+
+  # macro example
+  Aircraft
+  |> where([a], not like(a.model, "Airbus%") and not like(a.model, "Boeing%"))
+  |> select([a], map(a, [:aircraft_code, :model, :range]))
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 19:12:27.019 [debug] QUERY OK source="aircrafts" db=0.9ms idle=1567.3ms
+: SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 WHERE (NOT (a0."model" LIKE 'Airbus%') AND NOT (a0."model" LIKE 'Boeing%')) []
+: >>> :
+: [
+:   %{aircraft_code: "SU9", model: "Sukhoi Superjet-100", range: 3000},
+:   %{aircraft_code: "CN1", model: "Cessna 208 Caravan", range: 1200},
+:   %{aircraft_code: "CR2", model: "Bombardier CRJ-200", range: 2700}
+: ]
 
 * Схема базы
 ** Миграции
