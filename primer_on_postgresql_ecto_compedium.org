@@ -5096,6 +5096,43 @@ Referenced by:
 :   %{aircraft_code: "CR2", model: "Bombardier CRJ-200", range: 2700}
 : ]
 
+Кроме символа ~%~ в шаблоне может использоваться и символ подчеркивания — ~_~,
+который соответствует в точности одному любому символу. В качестве примера
+найдем в таблице ~airports~ те из них, которые имеют названия длиной 12
+символов.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT * FROM airports WHERE airport_name LIKE '____________';
+#+END_SRC
+
+#+RESULTS:
+| airport_code | airport_name | city | coordinates                           | timezone           |
+|--------------+--------------+------+---------------------------------------+--------------------|
+| URJ          | Uray Airport | Uraj | (64.82669830322266,60.10329818725586) | Asia/Yekaterinburg |
+| OSW          | Orsk Airport | Orsk | (58.59560012817383,51.0724983215332)  | Asia/Yekaterinburg |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Airport,
+    where: like(a.airport_name, "____________"),
+    select: map(a, [:airport_code, :airport_name, :city])
+
+  # macro example
+  Airport
+  |> where([a], like(a.airport_name, "____________"))
+  |> select([a], map(a, [:airport_code, :airport_name, :city]))
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 19:15:26.943 [debug] QUERY OK source="airports" db=0.5ms idle=1248.9ms
+: SELECT a0."airport_code", a0."airport_name", a0."city" FROM "airports" AS a0 WHERE (a0."airport_name" LIKE '____________') []
+: >>> :
+: [
+:   %{airport_code: "URJ", airport_name: "Uray Airport", city: "Uraj"},
+:   %{airport_code: "OSW", airport_name: "Orsk Airport", city: "Orsk"}
+: ]
+
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
