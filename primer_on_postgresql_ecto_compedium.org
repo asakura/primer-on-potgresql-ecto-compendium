@@ -4951,6 +4951,59 @@ Referenced by:
 Создайте представления и проверьте их в работе.
 
 *TODO* ответить на вопрос
+*** Вопрос 18
+Предположим, что нам понадобилось иметь в базе данных сведения о технических
+характеристиках самолетов, эксплуатируемых в авиакомпании. Пусть это будут такие
+сведения, как число членов экипажа (пилоты), тип двигателей и их количество.
+
+Следовательно, необходимо добавить новый столбец в таблицу ~aircrafts~. Дадим
+ему имя ~specifications~, а в качестве типа данных выберем ~jsonb~. Если
+впоследствии потребуется добавить и другие характеристики, то мы сможем это
+сделать, не модифицируя определение таблицы.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  ALTER TABLE aircrafts ADD COLUMN specifications jsonb;
+#+END_SRC
+
+Добавим сведения для модели самолета /Airbus A320-200/:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  UPDATE aircrafts
+     SET specifications = '{ "crew": 2,"engines": { "type": "IAE V2500","num": 2}}'::jsonb
+   WHERE aircraft_code = '320';
+#+END_SRC
+
+Посмотрим, что получилось:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  SELECT model, specifications FROM aircrafts WHERE aircraft_code = '320';
+#+END_SRC
+
+Можно посмотреть только сведения о двигателях:
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  SELECT model, specifications->'engines' AS engines
+    FROM aircrafts
+   WHERE aircraft_code = '320';
+#+END_SRC
+
+Чтобы получить еще более детальные сведения, например, о типе двигателей, нужно
+учитывать, что созданный JSON-объект имеет сложную структуру: он содержит
+вложенный JSON-объект. Поэтому нужно использовать оператор ~#>~ для указания
+пути доступа к ключу второго уровня.
+
+#+BEGIN_SRC sql :engine postgres :results value verbatim :eval no
+  SELECT model, specifications#>'{ engines, type }'
+    FROM aircrafts
+   WHERE aircraft_code = '320';
+#+END_SRC
+
+*Задание*: Подумайте, какие еще таблицы было бы целесообразно дополнить
+столбцами типа json/jsonb. Вспомните, что, например, в таблице ~tickets~ уже
+есть столбец такого типа — ~contact_data~. Выполните модификации таблиц и
+измените в них одну-две строки для проверки правильности ваших решений.
+
+*TODO* ответить на вопрос
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
