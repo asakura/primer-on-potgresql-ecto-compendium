@@ -5263,6 +5263,57 @@ Referenced by:
 :   %{aircraft_code: "321", model: "Airbus A321-200", range: 5600},
 :   %{aircraft_code: "733", model: "Boeing 737-300", range: 4200}
 : ]
+
+При выборке данных можно проводить вычисления и получать в результирующей
+таблице вычисляемые столбцы. Если мы захотим представить дальность полета не
+только в километрах, но и в милях, то нужно вычислить это выражение и для
+удобства присвоить новому столбцу псевдоним с помощью ключевого слова ~AS~.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT model, range, range / 1.609 AS miles FROM aircrafts;
+#+END_SRC
+
+#+RESULTS:
+| model               | range |                 miles |
+|---------------------+-------+-----------------------|
+| Boeing 777-300      | 11100 | 6898.6948415164698571 |
+| Boeing 767-300      |  7900 | 4909.8819142324425109 |
+| Sukhoi Superjet-100 |  3000 | 1864.5121193287756370 |
+| Airbus A320-200     |  5700 | 3542.5730267246737104 |
+| Airbus A321-200     |  5600 | 3480.4226227470478558 |
+| Airbus A319-100     |  6700 | 4164.0770665009322561 |
+| Boeing 737-300      |  4200 | 2610.3169670602858919 |
+| Cessna 208 Caravan  |  1200 |  745.8048477315102548 |
+| Bombardier CRJ-200  |  2700 | 1678.0609073958980733 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Aircraft,
+    select: map(a, [:model, :range]),
+    select_merge: %{miles: fragment("? / 1.609", a.range)}
+
+  # marco example
+  Aircraft
+  |> select([a], map(a, [:model, :range]))
+  |> select_merge([a], %{miles: fragment("? / 1.609", a.range)})
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 10:52:53.985 [debug] QUERY OK source="aircrafts" db=3.0ms idle=610.1ms
+: SELECT a0."model", a0."range", a0."range" / 1.609 FROM "aircrafts" AS a0 []
+: >>> :
+: [
+:   %{miles: Decimal.new("6898.6948415164698571"), model: "Boeing 777-300", range: 11100},
+:   %{miles: Decimal.new("4909.8819142324425109"), model: "Boeing 767-300", range: 7900},
+:   %{miles: Decimal.new("1864.5121193287756370"), model: "Sukhoi Superjet-100", range: 3000},
+:   %{miles: Decimal.new("3542.5730267246737104"), model: "Airbus A320-200", range: 5700},
+:   %{miles: Decimal.new("3480.4226227470478558"), model: "Airbus A321-200", range: 5600},
+:   %{miles: Decimal.new("4164.0770665009322561"), model: "Airbus A319-100", range: 6700},
+:   %{miles: Decimal.new("2610.3169670602858919"), model: "Boeing 737-300", range: 4200},
+:   %{miles: Decimal.new("745.8048477315102548"), model: "Cessna 208 Caravan", range: 1200},
+:   %{miles: Decimal.new("1678.0609073958980733"), model: "Bombardier CRJ-200", range: 2700}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
