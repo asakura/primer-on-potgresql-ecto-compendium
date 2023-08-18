@@ -5176,6 +5176,50 @@ Referenced by:
 :   %{aircraft_code: "319", model: "Airbus A319-100", range: 6700},
 :   %{aircraft_code: "733", model: "Boeing 737-300", range: 4200}
 : ]
+
+Оператор ~~~ ищет совпадение с шаблоном с учетом регистра символов. Для
+инвертирования смысла оператора ~~~ нужно перед ним добавить знак ~!~. В
+качестве примера отыщем модели самолетов, которые не завершаются числом 300.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT * FROM aircrafts WHERE model !~ '300$';
+#+END_SRC
+
+#+RESULTS:
+| aircraft_code | model               | range |
+|---------------+---------------------+-------|
+| SU9           | Sukhoi Superjet-100 |  3000 |
+| 320           | Airbus A320-200     |  5700 |
+| 321           | Airbus A321-200     |  5600 |
+| 319           | Airbus A319-100     |  6700 |
+| CN1           | Cessna 208 Caravan  |  1200 |
+| CR2           | Bombardier CRJ-200  |  2700 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Aircraft,
+    where: fragment("? !~ ?", a.model, "300$"),
+    select: map(a, [:aircraft_code, :model, :range])
+
+  # macro example
+  Aircraft
+  |> where([a], fragment("? !~ ?", a.model, "300$"))
+  |> select([a], map(a, [:aircraft_code, :model, :range]))
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 19:25:45.382 [debug] QUERY OK source="aircrafts" db=0.3ms idle=1727.9ms
+: SELECT a0."aircraft_code", a0."model", a0."range" FROM "aircrafts" AS a0 WHERE (a0."model" !~ '300$') []
+: >>> :
+: [
+:   %{aircraft_code: "SU9", model: "Sukhoi Superjet-100", range: 3000},
+:   %{aircraft_code: "320", model: "Airbus A320-200", range: 5700},
+:   %{aircraft_code: "321", model: "Airbus A321-200", range: 5600},
+:   %{aircraft_code: "319", model: "Airbus A319-100", range: 6700},
+:   %{aircraft_code: "CN1", model: "Cessna 208 Caravan", range: 1200},
+:   %{aircraft_code: "CR2", model: "Bombardier CRJ-200", range: 2700}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
