@@ -5418,6 +5418,191 @@ Referenced by:
 :   %{aircraft_code: "CR2", model: "Bombardier CRJ-200", range: 2700},
 :   %{aircraft_code: "CN1", model: "Cessna 208 Caravan", range: 1200}
 : ]
+
+В таблице ~airports~ есть столбец ~timezone~. Давайте посмотрим, в каких
+различных часовых поясах располагаются аэропорты. Если сделать традиционную
+выборку, то мы получим список значений, среди которых будет много повторяющихся:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT timezone FROM airports;
+#+END_SRC
+
+#+RESULTS:
+| timezone           |
+|--------------------|
+| Asia/Yakutsk       |
+| Asia/Yakutsk       |
+| Asia/Vladivostok   |
+| Asia/Kamchatka     |
+| Asia/Sakhalin      |
+| Asia/Vladivostok   |
+| Europe/Moscow      |
+| Europe/Kaliningrad |
+| Asia/Novokuznetsk  |
+| Asia/Yekaterinburg |
+| Asia/Yekaterinburg |
+| Asia/Yekaterinburg |
+| Asia/Yekaterinburg |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Samara      |
+| Asia/Yekaterinburg |
+| Asia/Yekaterinburg |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Samara      |
+| Europe/Moscow      |
+| Asia/Yekaterinburg |
+| Europe/Moscow      |
+| Asia/Krasnoyarsk   |
+| Asia/Irkutsk       |
+| Asia/Krasnoyarsk   |
+| Europe/Moscow      |
+| Europe/Volgograd   |
+| Asia/Yekaterinburg |
+| Asia/Yekaterinburg |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Asia/Yekaterinburg |
+| Asia/Krasnoyarsk   |
+| Asia/Yekaterinburg |
+| Europe/Moscow      |
+| Asia/Yakutsk       |
+| Asia/Vladivostok   |
+| Asia/Anadyr        |
+| Europe/Moscow      |
+| Asia/Krasnoyarsk   |
+| Asia/Novokuznetsk  |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Asia/Yekaterinburg |
+| Asia/Yekaterinburg |
+| Asia/Yekaterinburg |
+| Asia/Yekaterinburg |
+| Europe/Samara      |
+| Europe/Moscow      |
+| Asia/Yekaterinburg |
+| Asia/Yekaterinburg |
+| Asia/Yekaterinburg |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Samara      |
+| Asia/Yekaterinburg |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Asia/Irkutsk       |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Samara      |
+| Asia/Krasnoyarsk   |
+| Asia/Yekaterinburg |
+| Europe/Moscow      |
+| Asia/Krasnoyarsk   |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Asia/Yekaterinburg |
+| Asia/Yekaterinburg |
+| Asia/Novosibirsk   |
+| Europe/Moscow      |
+| Asia/Omsk          |
+| Europe/Moscow      |
+| Europe/Moscow      |
+| Europe/Volgograd   |
+| Asia/Yakutsk       |
+| Asia/Magadan       |
+| Asia/Chita         |
+| Asia/Irkutsk       |
+| Asia/Irkutsk       |
+| Asia/Irkutsk       |
+| Europe/Moscow      |
+| Asia/Krasnoyarsk   |
+| Asia/Krasnoyarsk   |
+| Europe/Moscow      |
+| Asia/Yakutsk       |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Airport,
+    select: map(a, [:timezone])
+
+  # macro example
+  Airport
+  |> select([a], map(a, [:timezone]))
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 10:59:51.989 [debug] QUERY OK source="airports" db=1.3ms idle=1615.4ms
+: SELECT a0."timezone" FROM "airports" AS a0 []
+: >>> :
+: [
+:   %{timezone: "Asia/Yakutsk"},
+:   %{timezone: "Asia/Yakutsk"},
+:   %{timezone: "Asia/Vladivostok"},
+:   %{timezone: "Asia/Kamchatka"},
+:   %{timezone: "Asia/Sakhalin"},
+:   %{timezone: "Asia/Vladivostok"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Europe/Kaliningrad"},
+:   %{timezone: "Asia/Novokuznetsk"},
+:   %{timezone: "Asia/Yekaterinburg"},
+:   %{timezone: "Asia/Yekaterinburg"},
+:   %{timezone: "Asia/Yekaterinburg"},
+:   %{timezone: "Asia/Yekaterinburg"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Europe/Samara"},
+:   %{timezone: "Asia/Yekaterinburg"},
+:   %{timezone: "Asia/Yekaterinburg"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Europe/Samara"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Asia/Yekaterinburg"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Asia/Krasnoyarsk"},
+:   %{timezone: "Asia/Irkutsk"},
+:   %{timezone: "Asia/Krasnoyarsk"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Europe/Volgograd"},
+:   %{timezone: "Asia/Yekaterinburg"},
+:   %{timezone: "Asia/Yekaterinburg"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Asia/Yekaterinburg"},
+:   %{timezone: "Asia/Krasnoyarsk"},
+:   %{timezone: "Asia/Yekaterinburg"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Asia/Yakutsk"},
+:   %{timezone: "Asia/Vladivostok"},
+:   %{timezone: "Asia/Anadyr"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Asia/Krasnoyarsk"},
+:   %{timezone: "Asia/Novokuznetsk"},
+:   %{timezone: "Europe/Moscow"},
+:   %{...},
+:   ...
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
