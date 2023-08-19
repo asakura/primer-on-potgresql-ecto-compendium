@@ -5603,6 +5603,76 @@ Referenced by:
 :   %{...},
 :   ...
 : ]
+
+Для того чтобы оставить в выборке только неповторяющиеся значения, служит
+ключевое слово ~DISTINCT~:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  -- столбец, по значениям которого будут упорядочены строки,
+  -- указан не с помощью его имени, а с помощью
+  -- его порядкового номера в предложении SELECT
+  SELECT DISTINCT timezone FROM airports ORDER BY 1;
+#+END_SRC
+
+#+RESULTS:
+| timezone           |
+|--------------------|
+| Asia/Anadyr        |
+| Asia/Chita         |
+| Asia/Irkutsk       |
+| Asia/Kamchatka     |
+| Asia/Krasnoyarsk   |
+| Asia/Magadan       |
+| Asia/Novokuznetsk  |
+| Asia/Novosibirsk   |
+| Asia/Omsk          |
+| Asia/Sakhalin      |
+| Asia/Vladivostok   |
+| Asia/Yakutsk       |
+| Asia/Yekaterinburg |
+| Europe/Kaliningrad |
+| Europe/Moscow      |
+| Europe/Samara      |
+| Europe/Volgograd   |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Airport,
+    distinct: true,
+    order_by: selected_as(:timezone),
+    select: %{timezone: selected_as(a.timezone, :timezone)}
+
+  # macro example
+  Airport
+  |> distinct(true)
+  |> order_by(selected_as(:timezone))
+  |> select([a], %{timezone: selected_as(a.timezone, :timezone)})
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 11:02:34.047 [debug] QUERY OK source="airports" db=1.5ms idle=1673.2ms
+: SELECT DISTINCT a0."timezone" AS "timezone" FROM "airports" AS a0 ORDER BY "timezone" []
+: >>> :
+: [
+:   %{timezone: "Asia/Anadyr"},
+:   %{timezone: "Asia/Chita"},
+:   %{timezone: "Asia/Irkutsk"},
+:   %{timezone: "Asia/Kamchatka"},
+:   %{timezone: "Asia/Krasnoyarsk"},
+:   %{timezone: "Asia/Magadan"},
+:   %{timezone: "Asia/Novokuznetsk"},
+:   %{timezone: "Asia/Novosibirsk"},
+:   %{timezone: "Asia/Omsk"},
+:   %{timezone: "Asia/Sakhalin"},
+:   %{timezone: "Asia/Vladivostok"},
+:   %{timezone: "Asia/Yakutsk"},
+:   %{timezone: "Asia/Yekaterinburg"},
+:   %{timezone: "Europe/Kaliningrad"},
+:   %{timezone: "Europe/Moscow"},
+:   %{timezone: "Europe/Samara"},
+:   %{timezone: "Europe/Volgograd"}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
