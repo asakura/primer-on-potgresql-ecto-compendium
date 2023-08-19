@@ -5720,6 +5720,54 @@ Referenced by:
 :   %{airport_name: "Yelizovo Airport", city: "Petropavlovsk", longitude: 158.45399475097656},
 :   %{airport_name: "Sokol Airport", city: "Magadan", longitude: 150.72000122070312}
 : ]
+
+А как найти еще три аэропорта, которые находятся немного западнее первой тройки,
+т.е. занимают места с четвертого по шестое? Нужно пропустить три первые строки,
+прежде чем начать вывод. Для пропуска строк служит предложение ~OFFSET~.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT airport_name, city, coordinates[0] AS longitude
+    FROM airports
+   ORDER BY longitude DESC
+   LIMIT 3
+  OFFSET 3;
+#+END_SRC
+
+#+RESULTS:
+| airport_name               | city               |          longitude |
+|----------------------------+--------------------+--------------------|
+| Yuzhno-Sakhalinsk Airport  | Yuzhno-Sakhalinsk  | 142.71800231933594 |
+| Komsomolsk-on-Amur Airport | Komsomolsk-on-Amur |  136.9340057373047 |
+| Khabarovsk-Novy Airport    | Khabarovsk         |    135.18800354004 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Airport,
+    order_by: [desc: selected_as(:longitude)],
+    limit: 3,
+    offset: 3,
+    select: map(a, [:airport_name, :city]),
+    select_merge: %{longitude: selected_as(fragment("?[0]", a.coordinates), :longitude)}
+
+  # macro example
+  Airport
+  |> order_by([a], desc: selected_as(:longitude))
+  |> limit(3)
+  |> offset(3)
+  |> select([a], map(a, [:airport_name, :city]))
+  |> select_merge([a], %{longitude: selected_as(fragment("?[0]", a.coordinates), :longitude)})
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 16:54:48.656 [debug] QUERY OK source="airports" db=0.2ms queue=0.2ms idle=1816.4ms
+: SELECT a0."airport_name", a0."city", a0."coordinates"[0] AS "longitude" FROM "airports" AS a0 ORDER BY "longitude" DESC LIMIT 3 OFFSET 3 []
+: >>> :
+: [
+:   %{airport_name: "Yuzhno-Sakhalinsk Airport", city: "Yuzhno-Sakhalinsk", longitude: 142.71800231933594},
+:   %{airport_name: "Komsomolsk-on-Amur Airport", city: "Komsomolsk-on-Amur", longitude: 136.9340057373047},
+:   %{airport_name: "Khabarovsk-Novy Airport", city: "Khabarovsk", longitude: 135.18800354004}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
