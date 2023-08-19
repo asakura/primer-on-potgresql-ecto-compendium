@@ -5673,6 +5673,53 @@ Referenced by:
 :   %{timezone: "Europe/Samara"},
 :   %{timezone: "Europe/Volgograd"}
 : ]
+
+Если мы поставим задачу найти три самых восточных аэропорта, то для ее решения
+подошел бы такой алгоритм: отсортировать строки в таблице по убыванию значений
+столбца ~longitude~ и включить в выборку только первые три строки. Для того
+чтобы ограничить число строк, включаемых в результирующую выборку, служит
+предложение ~LIMIT~:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT airport_name, city, coordinates[0] AS longitude
+    FROM airports
+   ORDER BY longitude DESC
+   LIMIT 3;
+#+END_SRC
+
+#+RESULTS:
+| airport_name     | city          |          longitude |
+|------------------+---------------+--------------------|
+| Ugolny Airport   | Anadyr        | 177.74099731445312 |
+| Yelizovo Airport | Petropavlovsk | 158.45399475097656 |
+| Sokol Airport    | Magadan       | 150.72000122070312 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Airport,
+    order_by: [desc: selected_as(:longitude)],
+    limit: 3,
+    select: map(a, [:airport_name, :city]),
+    select_merge: %{longitude: selected_as(fragment("?[0]", a.coordinates), :longitude)}
+
+  # macro example
+  Airport
+  |> order_by([a], desc: selected_as(:longitude))
+  |> limit(3)
+  |> select([a], map(a, [:airport_name, :city]))
+  |> select_merge([a], %{longitude: selected_as(fragment("?[0]", a.coordinates), :longitude)})
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 16:49:32.424 [debug] QUERY OK source="airports" db=1.5ms idle=495.2ms
+: SELECT a0."airport_name", a0."city", a0."coordinates"[0] AS "longitude" FROM "airports" AS a0 ORDER BY "longitude" DESC LIMIT 3 []
+: >>> :
+: [
+:   %{airport_name: "Ugolny Airport", city: "Anadyr", longitude: 177.74099731445312},
+:   %{airport_name: "Yelizovo Airport", city: "Petropavlovsk", longitude: 158.45399475097656},
+:   %{airport_name: "Sokol Airport", city: "Magadan", longitude: 150.72000122070312}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
