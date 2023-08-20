@@ -5768,6 +5768,84 @@ Referenced by:
 :   %{airport_name: "Komsomolsk-on-Amur Airport", city: "Komsomolsk-on-Amur", longitude: 136.9340057373047},
 :   %{airport_name: "Khabarovsk-Novy Airport", city: "Khabarovsk", longitude: 135.18800354004}
 : ]
+
+В дополнение к вычисляемым столбцам, когда выводимые значения получают путем
+вычислений, при выборке данных из таблиц можно использовать *условные
+выражения*, позволяющие вывести то или иное значение в зависимости от условий.
+
+В таблице ~aircrafts~ есть столбец ~range~. Мы можем дополнить вывод данных из
+этой таблицы столбцом ~aircraft type~, имея в виду принадлежность каждого
+самолета к классу дальнемагистральных, среднемагистральных или
+ближнемагистральных судов.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT model, range,
+    CASE WHEN range < 2000 THEN 'Close range'
+         WHEN range < 5000 THEN 'Middle range'
+         ELSE 'Long range'
+     END AS type
+    FROM aircrafts
+   ORDER BY model;
+#+END_SRC
+
+#+RESULTS:
+| model               | range | type         |
+|---------------------+-------+--------------|
+| Airbus A319-100     |  6700 | Long range   |
+| Airbus A320-200     |  5700 | Long range   |
+| Airbus A321-200     |  5600 | Long range   |
+| Boeing 737-300      |  4200 | Middle range |
+| Boeing 767-300      |  7900 | Long range   |
+| Boeing 777-300      | 11100 | Long range   |
+| Bombardier CRJ-200  |  2700 | Middle range |
+| Cessna 208 Caravan  |  1200 | Close range  |
+| Sukhoi Superjet-100 |  3000 | Middle range |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  case_expr =
+    dynamic(
+      [q],
+      fragment(
+        """
+        CASE WHEN ? < 2000 THEN 'Close range'
+        WHEN ? < 5000 THEN 'Middle range'
+        ELSE 'Long range'
+        END
+        """,
+        q.range,
+        q.range
+      )
+    )
+
+  from a in Aircraft,
+    order_by: a.model,
+    select: map(a, [:model, :range]),
+    select_merge: ^%{type: case_expr}
+
+  # macro example
+  Aircraft
+  |> order_by([a], a.model)
+  |> select([a], map(a, [:model, :range]))
+  |> select_merge([a], ^%{type: case_expr})
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 17:16:38.591 [debug] QUERY OK source="aircrafts" db=0.5ms idle=1544.3ms
+: SELECT a0."model", a0."range", CASE WHEN a0."range" < 2000 THEN 'Close range' WHEN a0."range" < 5000 THEN 'Middle range' ELSE 'Long range' END FROM "aircrafts" AS a0 ORDER BY a0."model" []
+: >>> :
+: [
+:   %{model: "Airbus A319-100", range: 6700, type: "Long range"},
+:   %{model: "Airbus A320-200", range: 5700, type: "Long range"},
+:   %{model: "Airbus A321-200", range: 5600, type: "Long range"},
+:   %{model: "Boeing 737-300", range: 4200, type: "Middle range"},
+:   %{model: "Boeing 767-300", range: 7900, type: "Long range"},
+:   %{model: "Boeing 777-300", range: 11100, type: "Long range"},
+:   %{model: "Bombardier CRJ-200", range: 2700, type: "Middle range"},
+:   %{model: "Cessna 208 Caravan", range: 1200, type: "Close range"},
+:   %{model: "Sukhoi Superjet-100", range: 3000, type: "Middle range"}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
