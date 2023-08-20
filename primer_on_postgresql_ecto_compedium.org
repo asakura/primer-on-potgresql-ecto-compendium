@@ -5846,6 +5846,78 @@ Referenced by:
 :   %{model: "Cessna 208 Caravan", range: 1200, type: "Close range"},
 :   %{model: "Sukhoi Superjet-100", range: 3000, type: "Middle range"}
 : ]
+** Соединения
+В тех случаях, когда информации, содержащейся в одной таблице, недостаточно для
+получения требуемого результата, используют *соединение* (*join*) таблиц.
+Покажем способ выполнения соединения на примере следующего запроса: выбрать все
+места, предусмотренные компоновкой салона самолета /Cessna 208 Caravan/. Данная
+команда иллюстрирует *соединение двух таблиц на основе равенства значений
+атрибутов*.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT a.aircraft_code,
+         a.model,
+         s.seat_no,
+         s.fare_conditions
+    FROM seats AS s
+         JOIN aircrafts AS a
+             ON s.aircraft_code = a.aircraft_code
+   WHERE a.model ~ '^Cessna'
+   ORDER BY s.seat_no;
+#+END_SRC
+
+#+RESULTS:
+| aircraft_code | model              | seat_no | fare_conditions |
+|---------------+--------------------+---------+-----------------|
+| CN1           | Cessna 208 Caravan | 1A      | Economy         |
+| CN1           | Cessna 208 Caravan | 1B      | Economy         |
+| CN1           | Cessna 208 Caravan | 2A      | Economy         |
+| CN1           | Cessna 208 Caravan | 2B      | Economy         |
+| CN1           | Cessna 208 Caravan | 3A      | Economy         |
+| CN1           | Cessna 208 Caravan | 3B      | Economy         |
+| CN1           | Cessna 208 Caravan | 4A      | Economy         |
+| CN1           | Cessna 208 Caravan | 4B      | Economy         |
+| CN1           | Cessna 208 Caravan | 5A      | Economy         |
+| CN1           | Cessna 208 Caravan | 5B      | Economy         |
+| CN1           | Cessna 208 Caravan | 6A      | Economy         |
+| CN1           | Cessna 208 Caravan | 6B      | Economy         |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from s in Seat,
+    join: a in assoc(a, :aircraft),
+    where: fragment("? ~ ?", a.model, "^Cessna"),
+    order_by: s.seat_no,
+    select_merge: map(a, [:aircraft_code, :model]),
+    select_merge: map(s, [:seat_no, :fare_conditions])
+
+  # macro example
+  Seat
+  |> join(:inner, [s], a in assoc(a, :aircraft))
+  |> where([s, a], fragment("? ~ ?", a.model, "^Cessna"))
+  |> order_by([s], s.seat_no)
+  |> select_merge([s, a], map(a, [:aircraft_code, :model]))
+  |> select_merge([s], map(s, [:seat_no, :fare_conditions]))
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 17:52:00.180 [debug] QUERY OK source="seats" db=1.3ms idle=1481.0ms
+: SELECT s0."seat_no", s0."fare_conditions", a1."aircraft_code", a1."model", s0."seat_no", s0."fare_conditions" FROM "seats" AS s0 INNER JOIN "aircrafts" AS a1 ON s0."aircraft_code" = a1."aircraft_code" WHERE (a1."model" ~ '^Cessna') ORDER BY s0."seat_no" []
+: [
+:   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "1A"},
+:   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "1B"},
+:   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "2A"},
+:   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "2B"},
+:   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "3A"},
+:   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "3B"},
+:   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "4A"},
+:   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "4B"},
+:   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "5A"},
+:   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "5B"},
+:   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "6A"},
+:   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "6B"}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
