@@ -5918,6 +5918,187 @@ Referenced by:
 :   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "6A"},
 :   %{aircraft_code: "CN1", fare_conditions: "Economy", model: "Cessna 208 Caravan", seat_no: "6B"}
 : ]
+
+Псевдонимы удобны в тех случаях, когда в соединяемых таблицах есть одноименные
+атрибуты. В таких случаях в списке атрибутов, следующих за ключевым словом
+~SELECT~, необходимо указывать либо имя таблицы, из которой выбирается значение
+этого атрибута, либо ее псевдоним, но псевдоним может быть коротким, что удобнее
+при написании команды. Псевдоними атрибут соединяются символом ~.~. Псевдонимы
+используются и в предложениях ~WHERE~, ~GROUP BY~, ~ORDER BY~, ~HAVING~, т.е. во
+всех частях команды ~SELECT~.
+
+Изучая язык SQL вообще и способы выполнения соединений в частности, нужно иметь
+в виду, что результатом любых реляционных операций над отношениями (таблицами,
+представлениями) также является отношение. Поэтому такие операции можно
+произвольно комбинировать друг с другом.
+
+В соединении одна и та же таблица может участвовать дважды, т.е. формировать
+соединение таблицы с самой собой. В качестве примера рассмотрим запрос для
+создания представления ~flights_v~:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  \x
+  SELECT f.flight_id,
+         f.flight_no,
+         f.scheduled_departure,
+         timezone(dep.timezone, f.scheduled_departure) AS scheduled_departure_local,
+         f.scheduled_arrival,
+         timezone(arr.timezone, f.scheduled_arrival) AS scheduled_arrival_local,
+         f.scheduled_arrival - f.scheduled_departure AS scheduled_duration,
+         f.departure_airport_code,
+         dep.airport_name AS departure_airport_name,
+         dep.city AS departure_city,
+         f.arrival_airport_code,
+         arr.airport_name AS arrival_airport_name,
+         arr.city AS arrival_city,
+         f.status,
+         f.aircraft_code,
+         f.actual_departure,
+         timezone(dep.timezone, f.actual_departure) AS actual_departure_local,
+         f.actual_arrival,
+         timezone(arr.timezone, f.actual_arrival) AS actual_arrival_local,
+         f.actual_arrival - f.actual_departure AS actual_duration
+    FROM flights f,
+         airports dep,
+         airports arr
+   WHERE f.departure_airport_code = dep.airport_code
+     AND f.arrival_airport_code = arr.airport_code
+   LIMIT 1;
+#+END_SRC
+
+#+RESULTS:
+| flight_id                 | 2880                             |
+|---------------------------+----------------------------------|
+| flight_no                 | PG0216                           |
+| scheduled_departure       | 2017-09-14 13:10:00+02           |
+| scheduled_departure_local | 2017-09-14 14:10:00              |
+| scheduled_arrival         | 2017-09-14 14:15:00+02           |
+| scheduled_arrival_local   | 2017-09-14 16:15:00              |
+| scheduled_duration        | 01:05:00                         |
+| departure_airport_code    | DME                              |
+| departure_airport_name    | Domodedovo International Airport |
+| departure_city            | Moscow                           |
+| arrival_airport_code      | KUF                              |
+| arrival_airport_name      | Kurumoch International Airport   |
+| arrival_city              | Samara                           |
+| status                    | Scheduled                        |
+| aircraft_code             | 763                              |
+| actual_departure          | NULL                             |
+| actual_departure_local    | NULL                             |
+| actual_arrival            | NULL                             |
+| actual_arrival_local      | NULL                             |
+| actual_duration           | NULL                             |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  timezone = fn airport, field ->
+    dynamic(
+      [{^airport, a}, flight: f],
+      fragment("timezone(?, ?)", a.timezone, field(f, ^field))
+    )
+  end
+
+  from f in Flight,
+    as: :flight,
+    join: dep in assoc(f, :departure_airport),
+    as: :departure_airport,
+    join: arr in assoc(f, :arrival_airport),
+    as: :arrival_airport,
+    limit: 1,
+    select_merge:
+      map(f, [
+        :actual_arrival,
+        :actual_departure,
+        :aircraft_code,
+        :arrival_airport_code,
+        :departure_airport_code,
+        :flight_id,
+        :flight_no,
+        :scheduled_arrival,
+        :scheduled_departure,
+        :status
+      ]),
+    select_merge: %{
+      scheduled_duration: f.scheduled_arrival - f.scheduled_departure,
+      actual_duration: f.actual_arrival - f.actual_departure
+    },
+    select_merge: map(dep, [:airport_name, :city]),
+    select_merge: map(arr, [:airport_name, :city]),
+    select_merge:
+      ^%{
+        scheduled_departure_local: timezone.(:departure_airport, :scheduled_departure),
+        scheduled_arrival_local: timezone.(:arrival_airport, :scheduled_arrival),
+        actual_departure_local: timezone.(:departure_airport, :actual_departure),
+        actual_arrival_local: timezone.(:arrival_airport, :actual_arrival)
+      }
+  # macro example
+  from(Flight, as: :flight)
+  |> join(:inner, [f], dep in assoc(f, :departure_airport), as: :departure_airport)
+  |> join(:inner, [f], arr in assoc(f, :arrival_airport), as: :arrival_airport)
+  |> limit(1)
+  |> select_merge(
+    [f],
+    map(f, [
+      :actual_arrival,
+      :actual_departure,
+      :aircraft_code,
+      :arrival_airport_code,
+      :departure_airport_code,
+      :flight_id,
+      :flight_no,
+      :scheduled_arrival,
+      :scheduled_departure,
+      :status
+    ])
+  )
+  |> select_merge([f], %{
+    scheduled_duration: f.scheduled_arrival - f.scheduled_departure,
+    actual_duration: f.actual_arrival - f.actual_departure
+  })
+  |> select_merge([departure_airport: dep], map(dep, [:airport_name, :city]))
+  |> select_merge([arrival_airport: arr], map(arr, [:airport_name, :city]))
+  |> select_merge(
+    ^%{
+      scheduled_departure_local: timezone.(:departure_airport, :scheduled_departure),
+      scheduled_arrival_local: timezone.(:arrival_airport, :scheduled_arrival),
+      actual_departure_local: timezone.(:departure_airport, :actual_departure),
+      actual_arrival_local: timezone.(:arrival_airport, :actual_arrival)
+    }
+  )
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 19:40:02.203 [debug] QUERY OK source="flights" db=1.2ms queue=0.8ms idle=33.2ms
+: SELECT f0."actual_arrival", f0."actual_departure", f0."aircraft_code", f0."arrival_airport_code", f0."departure_airport_code", f0."flight_id", f0."flight_no", f0."scheduled_arrival", f0."scheduled_departure", f0."status", f0."scheduled_arrival" - f0."scheduled_departure", f0."actual_arrival" - f0."actual_departure", a1."airport_name", a1."city", a2."airport_name", a2."city", timezone(a2."timezone", f0."actual_arrival"), timezone(a1."timezone", f0."actual_departure"), timezone(a2."timezone", f0."scheduled_arrival"), timezone(a1."timezone", f0."scheduled_departure") FROM "flights" AS f0 INNER JOIN "airports" AS a1 ON a1."airport_code" = f0."departure_airport_code" INNER JOIN "airports" AS a2 ON a2."airport_code" = f0."arrival_airport_code" LIMIT 1 []
+: >>> :
+: [
+:   %{
+:     actual_arrival: nil,
+:     actual_arrival_local: nil,
+:     actual_departure: nil,
+:     actual_departure_local: nil,
+:     actual_duration: nil,
+:     aircraft_code: "763",
+:     airport_name: "Kurumoch International Airport",
+:     arrival_airport_code: "KUF",
+:     city: "Samara",
+:     departure_airport_code: "DME",
+:     flight_id: 2880,
+:     flight_no: "PG0216",
+:     scheduled_arrival: ~U[2017-09-14 12:15:00Z],
+:     scheduled_arrival_local: ~N[2017-09-14 16:15:00.000000],
+:     scheduled_departure: ~U[2017-09-14 11:10:00Z],
+:     scheduled_departure_local: ~N[2017-09-14 14:10:00.000000],
+:     scheduled_duration: %Postgrex.Interval{
+:       months: 0,
+:       days: 0,
+:       secs: 3900,
+:       microsecs: 0
+:     },
+:     status: "Scheduled"
+:   }
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
