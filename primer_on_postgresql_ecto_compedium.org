@@ -6172,6 +6172,42 @@ Referenced by:
 : 20:00:20.340 [debug] QUERY OK source="airports" db=1.4ms idle=350.3ms
 : SELECT count(*) FROM "airports" AS a0 INNER JOIN "airports" AS a1 ON a0."city" != a1."city" []
 : >>> : 10704
+
+Третий вариант предусматривает *явное использование декартова произведения
+таблиц*. Для этого служит предложение ~CROSS JOIN~.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT count(*)
+    FROM airports a1
+         CROSS JOIN airports a2
+   WHERE a1.city <> a2.city;
+#+END_SRC
+
+#+RESULTS:
+| count |
+|-------|
+| 10704 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a1 in Airport,
+    cross_join: a2 in Airport,
+    where: a1.city != a2.city
+
+  # macro example
+  Airport
+  |> join(:cross, [a1], a2 in Airport)
+  |> where([a1, a2], a1.city != a2.city)
+  |> Repo.aggregate(:count)
+#+END_SRC
+
+#+RESULTS:
+: 17:21:07.691 [debug] QUERY OK source="airports" db=1.4ms queue=0.5ms idle=29.0ms
+: SELECT count(*) FROM "airports" AS a0 CROSS JOIN "airports" AS a1 WHERE (a0."city" != a1."city") []
+: >>> : 10704
+
+С точки зрения СУБД эти три варианта эквивалентны. Для них PostgreSQL выберет
+один и тот же план (порядок) выполнения запроса.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
