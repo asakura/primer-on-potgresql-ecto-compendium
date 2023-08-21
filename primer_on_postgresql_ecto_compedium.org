@@ -6266,6 +6266,82 @@ Referenced by:
 :   %{aircraft_code: "763", count: 26, model: "Boeing 767-300"},
 :   %{aircraft_code: "773", count: 10, model: "Boeing 777-300"}
 : ]
+
+Обратите внимание, что таблица ~aircrafts~ содержит 9 моделей, а в этой выборке
+лишь 8 строк. Значит, какая-то модель самолета не участвует в выполнении рейсов.
+Как ее выявить? В данном запросе используется левое внешнее соединение — об этом
+говорит предложение ~LEFT OUTER JOIN~.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT a.aircraft_code AS a_code,
+         a.model,
+         r.aircraft_code AS r_code,
+         count(r.aircraft_code) AS num_routes
+    FROM aircrafts a
+         LEFT OUTER JOIN routes r
+             ON r.aircraft_code = a.aircraft_code
+   GROUP BY 1, 2, 3
+   ORDER BY 4 DESC;
+#+END_SRC
+
+#+RESULTS:
+| a_code | model               | r_code | num_routes |
+|--------+---------------------+--------+------------|
+|    CR2 | Bombardier CRJ-200  |    CR2 |        232 |
+|    CN1 | Cessna 208 Caravan  |    CN1 |        170 |
+|    SU9 | Sukhoi Superjet-100 |    SU9 |        158 |
+|    319 | Airbus A319-100     |    319 |         46 |
+|    733 | Boeing 737-300      |    733 |         36 |
+|    321 | Airbus A321-200     |    321 |         32 |
+|    763 | Boeing 767-300      |    763 |         26 |
+|    773 | Boeing 777-300      |    773 |         10 |
+|    320 | Airbus A320-200     |   NULL |          0 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Aircraft,
+    left_join: r in assoc(a, :routes),
+    group_by: [a.aircraft_code, a.model, r.aircraft_code],
+    order_by: [desc: selected_as(:num_routes)],
+    select: %{a_code: a.aircraft_code, model: a.model},
+    select_merge: %{r_code: r.aircraft_code},
+    select_merge: %{num_routes: selected_as(count(r.aircraft_code), :num_routes)}
+
+  # macro example
+  Aircraft
+  |> join(:left, [a], r in assoc(a, :routes))
+  |> group_by([a, r], [a.aircraft_code, a.model, r.aircraft_code])
+  |> order_by(desc: selected_as(:num_routes))
+  |> select([a], %{a_code: a.aircraft_code, model: a.model})
+  |> select_merge([a, r], %{r_code: r.aircraft_code})
+  |> select_merge([a, r], %{num_routes: selected_as(count(r.aircraft_code), :num_routes)})
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 18:47:54.974 [debug] QUERY OK source="aircrafts" db=152.2ms queue=0.5ms idle=1233.2ms
+: SELECT a0."aircraft_code", a0."model", r1."aircraft_code", count(r1."aircraft_code") AS "num_routes" FROM "aircrafts" AS a0 LEFT OUTER JOIN "routes" AS r1 ON r1."aircraft_code" = a0."aircraft_code" GROUP BY a0."aircraft_code", a0."model", r1."aircraft_code" ORDER BY "num_routes" DESC []
+: >>> :
+: [
+:   %{a_code: "CR2", model: "Bombardier CRJ-200", num_routes: 232, r_code: "CR2"},
+:   %{a_code: "CN1", model: "Cessna 208 Caravan", num_routes: 170, r_code: "CN1"},
+:   %{a_code: "SU9", model: "Sukhoi Superjet-100", num_routes: 158, r_code: "SU9"},
+:   %{a_code: "319", model: "Airbus A319-100", num_routes: 46, r_code: "319"},
+:   %{a_code: "733", model: "Boeing 737-300", num_routes: 36, r_code: "733"},
+:   %{a_code: "321", model: "Airbus A321-200", num_routes: 32, r_code: "321"},
+:   %{a_code: "763", model: "Boeing 767-300", num_routes: 26, r_code: "763"},
+:   %{a_code: "773", model: "Boeing 777-300", num_routes: 10, r_code: "773"},
+:   %{a_code: "320", model: "Airbus A320-200", num_routes: 0, r_code: nil}
+: ]
+
+В качестве базовой таблицы выбирается таблица ~aircrafts~, указанная в запросе
+слева от предложения ~LEFT OUTER JOIN~, и для каждой строки, находящейся в ней,
+из таблицы ~routes~ подбираются строки, в которых значение атрибута
+~aircraft_code~ такое же, как и в текущей строке таблицы ~aircrafts~. Если в
+таблице ~routes~ нет ни одной соответствующей строки, то при отсутствии ключевых
+слов ~LEFT OUTER~ результирующая комбинированная строка просто не будет
+сформирована и не попадетв выборку. Но при наличии ключевых слов ~LEFT OUTER~
+результирующая строка все равно будет сформирована.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
