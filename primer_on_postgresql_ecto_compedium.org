@@ -6208,6 +6208,64 @@ Referenced by:
 
 С точки зрения СУБД эти три варианта эквивалентны. Для них PostgreSQL выберет
 один и тот же план (порядок) выполнения запроса.
+
+Теперь обратимся к так называемым *внешним соединениям*. Зададимся вопросом:
+сколько маршрутов обслуживают самолеты каждого типа?
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT r.aircraft_code, a.model, count(*) AS num_routes
+    FROM routes r
+         JOIN aircrafts a
+             ON r.aircraft_code = a.aircraft_code
+   GROUP BY 1, 2
+   ORDER BY 3 DESC;
+#+END_SRC
+
+#+RESULTS:
+| aircraft_code | model               | num_routes |
+|---------------+---------------------+------------|
+|           CR2 | Bombardier CRJ-200  |        232 |
+|           CN1 | Cessna 208 Caravan  |        170 |
+|           SU9 | Sukhoi Superjet-100 |        158 |
+|           319 | Airbus A319-100     |         46 |
+|           733 | Boeing 737-300      |         36 |
+|           321 | Airbus A321-200     |         32 |
+|           763 | Boeing 767-300      |         26 |
+|           773 | Boeing 777-300      |         10 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from r in Route,
+    join: a in assoc(r, :aircraft),
+    group_by: [a.aircraft_code, a.model],
+    order_by: [desc: selected_as(:num_routes)],
+    select: map(a, [:aircraft_code, :model]),
+    select_merge: %{num_routes: selected_as(count(), :num_routes)}
+
+  # macro example
+  Route
+  |> join(:inner, [r], a in assoc(r, :aircraft))
+  |> group_by([r, a], [a.aircraft_code, a.model])
+  |> order_by(desc: selected_as(:num_routes))
+  |> select([r, a], map(a, [:aircraft_code, :model]))
+  |> select_merge(%{num_routes: selected_as(count(), :num_routes)})
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 18:35:19.011 [debug] QUERY OK source="routes" db=160.1ms idle=1264.4ms
+: SELECT a1."aircraft_code", a1."model", count(*) AS "num_routes" FROM "routes" AS r0 INNER JOIN "aircrafts" AS a1 ON a1."aircraft_code" = r0."aircraft_code" GROUP BY a1."aircraft_code", a1."model" ORDER BY "num_routes" DESC []
+: >>> :
+: [
+:   %{aircraft_code: "CR2", count: 232, model: "Bombardier CRJ-200"},
+:   %{aircraft_code: "CN1", count: 170, model: "Cessna 208 Caravan"},
+:   %{aircraft_code: "SU9", count: 158, model: "Sukhoi Superjet-100"},
+:   %{aircraft_code: "319", count: 46, model: "Airbus A319-100"},
+:   %{aircraft_code: "733", count: 36, model: "Boeing 737-300"},
+:   %{aircraft_code: "321", count: 32, model: "Airbus A321-200"},
+:   %{aircraft_code: "763", count: 26, model: "Boeing 767-300"},
+:   %{aircraft_code: "773", count: 10, model: "Boeing 777-300"}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
