@@ -6099,6 +6099,47 @@ Referenced by:
 :     status: "Scheduled"
 :   }
 : ]
+
+Рассмотрев этот пример, вновь обратимся к соединениям такого типа и покажем три
+способа выполнения *соединения таблицы с самой собой*, отличающиеся
+синтаксически, но являющиеся функционально эквивалентными.
+
+Наш запрос-иллюстрациядолжен выяснить: сколько всего маршрутов нужно было бы
+сформировать, если бы требовалось соединить каждый город со всеми остальными
+городами?
+
+Первый вариант запроса использует обычное перечисление имен таблиц в предложении
+~FROM~, т.е. формирует *декартово произведение таблиц* — все попарные комбинации
+строк из двух таблиц.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT count(*)
+    FROM airports a1, airports a2
+   WHERE a1.city <> a2.city;
+#+END_SRC
+
+#+RESULTS:
+| count |
+|-------|
+| 10704 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a1 in Airport,
+    join: a2 in Airport,
+    where: a1.city != a2.city
+
+  # macro example
+  Airport
+  |> join(:inner, [a1], a2 in Airport)
+  |> where([a1, a2], a1.city != a2.city)
+  |> Repo.aggregate(:count)
+#+END_SRC
+
+#+RESULTS:
+: 18:30:17.937 [debug] QUERY OK source="airports" db=2.6ms idle=1347.8ms
+: SELECT count(*) FROM "airports" AS a0 INNER JOIN "airports" AS a1 ON TRUE WHERE (a0."city" != a1."city") []
+: >>> : 10704
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
