@@ -6615,6 +6615,103 @@ Referenced by:
 :     seat_no: "1A"
 :   }
 : ]
+
+В предложении ~FROM~ можно использовать виртуальные таблицы, сформированные с
+помощью ключевого слова ~VALUES~. Предположим, что для выработки финансовой
+стратегии нашей авиакомпании требуется распределение количества бронирований по
+диапазонам сумм с шагом в 100 тысяч рублей.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT r.min_sum, r.max_sum, count(b.*)
+    FROM bookings b
+         RIGHT OUTER JOIN ( VALUES (      0,  100000), ( 100000,  200000),
+                                   ( 200000,  300000), ( 300000,  400000),
+                                   ( 400000,  500000), ( 500000,  600000),
+                                   ( 600000,  700000), ( 700000,  800000),
+                                   ( 800000,  900000), ( 900000, 1000000),
+                                   (1000000, 1100000), (1100000, 1200000),
+                                   (1200000, 1300000)) AS r (min_sum, max_sum)
+             ON b.total_amount >= r.min_sum
+                AND b.total_amount < r.max_sum
+   GROUP BY r.min_sum, r.max_sum
+   ORDER BY r.min_sum;
+#+END_SRC
+
+#+RESULTS:
+| min_sum | max_sum |   count |
+|---------+---------+---------|
+|       0 |  100000 | 1589446 |
+|  100000 |  200000 |  380085 |
+|  200000 |  300000 |   95943 |
+|  300000 |  400000 |   26883 |
+|  400000 |  500000 |   10588 |
+|  500000 |  600000 |    5474 |
+|  600000 |  700000 |    1948 |
+|  700000 |  800000 |     453 |
+|  800000 |  900000 |     174 |
+|  900000 | 1000000 |      90 |
+| 1000000 | 1100000 |      19 |
+| 1100000 | 1200000 |       4 |
+| 1200000 | 1300000 |       2 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  defmodule Queries09 do
+    ranges = [
+      {0, 100_000},
+      {100_000, 200_000},
+      {200_000, 300_000},
+      {300_000, 400_000},
+      {400_000, 500_000},
+      {500_000, 600_000},
+      {600_000, 700_000},
+      {700_000, 800_000},
+      {800_000, 900_000},
+      {900_000, 1_000_000},
+      {1_000_000, 1_100_000},
+      {1_100_000, 1_200_000},
+      {1_200_000, 1_300_000}
+    ]
+
+    values =
+      ranges
+      |> Enum.map_join(", ", fn {min_sum, max_sum} -> "(#{min_sum}, #{max_sum})" end)
+      |> then(&"SELECT * FROM (VALUES #{&1}) AS values (min_sum, max_sum)")
+
+    def query() do
+      Booking
+      |> with_cte("values", as: fragment(unquote(values)))
+      |> join(:right, [b], v in "values",
+        on: b.total_amount >= v.min_sum and b.total_amount < v.max_sum
+      )
+      |> group_by([b, v], [v.min_sum, v.max_sum])
+      |> order_by([b, v], v.min_sum)
+      |> select([b, v], map(v, [:min_sum, :max_sum]))
+      |> select_merge([b, v], %{count: selected_as(count(b), :count)})
+    end
+  end
+
+  Repo.all(Queries09.query())
+#+END_SRC
+
+#+RESULTS:
+: 09:22:41.195 [debug] QUERY OK source="bookings" db=3243.7ms queue=3.2ms idle=628.7ms
+: WITH "values" AS (SELECT * FROM (VALUES (0, 100000), (100000, 200000), (200000, 300000), (300000, 400000), (400000, 500000), (500000, 600000), (600000, 700000), (700000, 800000), (800000, 900000), (900000, 1000000), (1000000, 1100000), (1100000, 1200000), (1200000, 1300000)) AS values (min_sum, max_sum)) SELECT v1."min_sum", v1."max_sum", count(b0) AS "count" FROM "bookings" AS b0 RIGHT OUTER JOIN "values" AS v1 ON (b0."total_amount" >= v1."min_sum") AND (b0."total_amount" < v1."max_sum") GROUP BY v1."min_sum", v1."max_sum" ORDER BY v1."min_sum" []
+: >>> :
+: [
+:   %{count: 1589446, max_sum: 100000, min_sum: 0},
+:   %{count: 380085, max_sum: 200000, min_sum: 100000},
+:   %{count: 95943, max_sum: 300000, min_sum: 200000},
+:   %{count: 26883, max_sum: 400000, min_sum: 300000},
+:   %{count: 10588, max_sum: 500000, min_sum: 400000},
+:   %{count: 5474, max_sum: 600000, min_sum: 500000},
+:   %{count: 1948, max_sum: 700000, min_sum: 600000},
+:   %{count: 453, max_sum: 800000, min_sum: 700000},
+:   %{count: 174, max_sum: 900000, min_sum: 800000},
+:   %{count: 90, max_sum: 1000000, min_sum: 900000},
+:   %{count: 19, max_sum: 1100000, min_sum: 1000000},
+:   %{count: 4, max_sum: 1200000, min_sum: 1100000},
+:   %{count: 2, max_sum: 1300000, min_sum: 1200000}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
