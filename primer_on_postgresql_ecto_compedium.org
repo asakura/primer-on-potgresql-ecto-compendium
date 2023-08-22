@@ -6342,6 +6342,75 @@ Referenced by:
 слов ~LEFT OUTER~ результирующая комбинированная строка просто не будет
 сформирована и не попадетв выборку. Но при наличии ключевых слов ~LEFT OUTER~
 результирующая строка все равно будет сформирована.
+
+Кроме левого внешнего соединения существует также и правое внешнее соединение —
+~RIGHT OUTER JOIN~. В этом случае в качестве базовой выбирается таблица, имя
+которой указано справа отпредложения ~RIGHT OUTER JOIN~, а механизм получения
+результирующих строк в случае, когда для строки базовой таблицы не находится
+пары во второй таблице, точно такой же, как и для левого внешнего соединения.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT a.aircraft_code AS a_code,
+         a.model,
+         r.aircraft_code AS r_code,
+         count(r.aircraft_code) AS num_routes
+    FROM routes r
+         RIGHT OUTER JOIN aircrafts a
+             ON r.aircraft_code = a.aircraft_code
+   GROUP BY 1, 2, 3
+   ORDER BY 4 DESC;
+#+END_SRC
+
+#+RESULTS:
+| a_code | model               | r_code | num_routes |
+|--------+---------------------+--------+------------|
+|    CR2 | Bombardier CRJ-200  |    CR2 |        232 |
+|    CN1 | Cessna 208 Caravan  |    CN1 |        170 |
+|    SU9 | Sukhoi Superjet-100 |    SU9 |        158 |
+|    319 | Airbus A319-100     |    319 |         46 |
+|    733 | Boeing 737-300      |    733 |         36 |
+|    321 | Airbus A321-200     |    321 |         32 |
+|    763 | Boeing 767-300      |    763 |         26 |
+|    773 | Boeing 777-300      |    773 |         10 |
+|    320 | Airbus A320-200     |   NULL |          0 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from r in Route,
+    right_join: a in Aircraft,
+    on: r.aircraft_code == a.aircraft_code,
+    group_by: [a.aircraft_code, a.model, r.aircraft_code],
+    order_by: [desc: selected_as(:num_routes)],
+    select: %{a_code: a.aircraft_code, model: a.model},
+    select_merge: %{r_code: r.aircraft_code},
+    select_merge: %{num_routes: selected_as(count(r.aircraft_code), :num_routes)}
+
+  # macro example
+  Route
+  |> join(:right, [r], a in Aircraft, on: r.aircraft_code == a.aircraft_code)
+  |> group_by([r, a], [a.aircraft_code, a.model, r.aircraft_code])
+  |> order_by(desc: selected_as(:num_routes))
+  |> select([r, a], map(a, [:aircraft_code, :model]))
+  |> select_merge([r, a], map(r, [:aircraft_code]))
+  |> select_merge([r, a], %{num_routes: selected_as(count(r.aircraft_code), :num_routes)})
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 18:52:19.438 [debug] QUERY OK source="routes" db=150.6ms queue=0.6ms idle=1699.6ms
+: SELECT a1."aircraft_code", a1."model", r0."aircraft_code", count(r0."aircraft_code") AS "num_routes" FROM "routes" AS r0 RIGHT OUTER JOIN "aircrafts" AS a1 ON r0."aircraft_code" = a1."aircraft_code" GROUP BY a1."aircraft_code", a1."model", r0."aircraft_code" ORDER BY "num_routes" DESC []
+: >>> :
+: [
+:   %{a_code: "CR2", model: "Bombardier CRJ-200", num_routes: 232, r_code: "CR2"},
+:   %{a_code: "CN1", model: "Cessna 208 Caravan", num_routes: 170, r_code: "CN1"},
+:   %{a_code: "SU9", model: "Sukhoi Superjet-100", num_routes: 158, r_code: "SU9"},
+:   %{a_code: "319", model: "Airbus A319-100", num_routes: 46, r_code: "319"},
+:   %{a_code: "733", model: "Boeing 737-300", num_routes: 36, r_code: "733"},
+:   %{a_code: "321", model: "Airbus A321-200", num_routes: 32, r_code: "321"},
+:   %{a_code: "763", model: "Boeing 767-300", num_routes: 26, r_code: "763"},
+:   %{a_code: "773", model: "Boeing 777-300", num_routes: 10, r_code: "773"},
+:   %{a_code: "320", model: "Airbus A320-200", num_routes: 0, r_code: nil}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
