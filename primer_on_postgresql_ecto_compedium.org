@@ -6411,6 +6411,90 @@ Referenced by:
 :   %{a_code: "773", model: "Boeing 777-300", num_routes: 10, r_code: "773"},
 :   %{a_code: "320", model: "Airbus A320-200", num_routes: 0, r_code: nil}
 : ]
+
+Комбинацией этих двух видов внешних соединений является *полное внешнее
+соединение* — ~FULL OUTER JOIN~. В этом случае в выборку включаются строки из
+левой таблицы, для которых не нашлось соответствующих строк в правой таблице, и
+строки из правой таблицы, длякоторых не нашлось соответствующих строк в левой
+таблице.
+
+В практической работе при выполнении выборок зачастую выполняются
+*многотабличные запросы*, включающие три таблицы и более. В качестве примера
+рассмотрим такую задачу: определить число пассажиров, не пришедших на
+регистрацию билетов и, следовательно, не вылетевших в пункт назначения.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT count(*)
+    FROM ticket_flights t
+         JOIN flights f
+             ON t.flight_id = f.flight_id
+         LEFT OUTER JOIN boarding_passes b
+             ON t.ticket_no = b.ticket_no
+                AND t.flight_id = b.flight_id
+   WHERE f.actual_departure IS NOT NULL
+         AND b.flight_id IS NULL;
+#+END_SRC
+
+#+RESULTS:
+| count |
+|-------|
+|     0 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from tf in TicketFlights,
+    join: f in assoc(tf, :flight),
+    left_join: b in BoardingPass,
+    on: tf.ticket_no == b.ticket_no and tf.flight_id == b.flight_id,
+    # is_nill(b.flight) - позволяет выявить те строки, где не нашлось посадочного билета
+    where: not is_nil(f.actual_departure) and is_nil(b.flight_id)
+
+  # macro example
+  TicketFlights
+  |> join(:inner, [t], f in assoc(t, :flight))
+  |> join(:left, [t], b in BoardingPass,
+    on: t.ticket_no == b.ticket_no and t.flight_id == b.flight_id
+  )
+  |> where([t, f, b], not is_nil(f.actual_departure) and is_nil(b.flight_id))
+  |> Repo.aggregate(:count)
+#+END_SRC
+
+#+RESULTS:
+: 20:13:09.606 [debug] QUERY OK source="ticket_flights" db=1887.9ms decode=0.8ms queue=0.6ms idle=1.5ms
+: SELECT count(*) FROM "ticket_flights" AS t0 INNER JOIN "flights" AS f1 ON f1."flight_id" = t0."flight_id" LEFT OUTER JOIN "boarding_passes" AS b2 ON (t0."ticket_no" = b2."ticket_no") AND (t0."flight_id" = b2."flight_id") WHERE (NOT (f1."actual_departure" IS NULL) AND (b2."flight_id" IS NULL)) []
+: >>> : 0
+
+Чтобы все же удостовериться в работоспособности следующего запроса, можно в
+таблице ~boarding_passes~ изменить в одной строке номер места таким образом,
+чтобы этот пассажир переместился из салона экономического класса в салон
+бизнес-класса.
+
+#+BEGIN_SRC sql :engine postgres :exports :results value verbatim both :eval no
+  UPDATE boarding_passes
+     SET seat_no = '1A'
+   WHERE flight_id = 2 AND seat_no = '17A';
+#+END_SRC
+
+#+RESULTS:
+: UPDATE 1
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from b in BoardingPass,
+    where: b.flight_id == 2 and b.seat_no == "17A",
+    update: [set: [seat_no: "1A"]]
+
+  # macro example
+  BoardingPass
+  |> where([b], b.flight_id == 2 and b.seat_no == "17A")
+  |> update(set: [seat_no: "1A"])
+  |> Repo.update_all([])
+#+END_SRC
+
+#+RESULTS:
+: 20:13:09.620 [debug] QUERY OK source="boarding_passes" db=7.9ms queue=1.1ms idle=1900.1ms
+: UPDATE "boarding_passes" AS b0 SET "seat_no" = '1A' WHERE ((b0."flight_id" = 2) AND (b0."seat_no" = '17A')) []
+: >>> : {1, nil}
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
