@@ -6965,6 +6965,86 @@ Referenced by:
 : ["Cheboksary", "Elista", "Kazan", "Khabarovsk", "Kirov", "Neryungri",
 :  "Nizhnevartovsk", "Nizhniy Novgorod", "Noyabrsk", "Orenburg", "Sovetskiy",
 :  "Tambow", "Tyumen", "Vorkuta", "Voronezh"]
+
+Рассмотрим операцию *разности множеств строк* — ~EXCEPT~. Строка включается в
+итоговое множество (выборку), если она присутствует в первом множестве
+(выборке), но отсутствует во втором. Строки-дубликаты в результирующее множество
+не включаются. Для их включения нужно использовать ~EXCEPT ALL~.
+
+Вопрос: в какие города можно улететь из Санкт-Петербурга, но нельзя из Москвы?
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT arrival_city
+    FROM routes
+   WHERE departure_city = 'St. Petersburg'
+
+  EXCEPT
+
+  SELECT arrival_city
+    FROM routes
+   WHERE departure_city = 'Moscow'
+   ORDER BY arrival_city;
+#+END_SRC
+
+#+RESULTS:
+| arrival_city |
+|--------------|
+| Cherepovets  |
+| Irkutsk      |
+| Kaluga       |
+| Moscow       |
+| Yakutia      |
+| Yakutsk      |
+| Yaroslavl    |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  base_query =
+    from r in Route,
+      where: r.departure_city == "Moscow",
+      select: map(r, [:arrival_city])
+
+  except_query =
+    from r in Route,
+      where: r.departure_city == "St. Petersburg",
+      except: ^base_query,
+      select: map(r, [:arrival_city])
+
+  from u in subquery(except_query),
+    order_by: u.arrival_city,
+    select: u.arrival_city
+
+  # macro example
+  base_query =
+    Route
+    |> where([r], r.departure_city == "Moscow")
+    |> select([r], map(r, [:arrival_city]))
+
+  except_query =
+    Route
+    |> where([r], r.departure_city == "St. Petersburg")
+    |> except(^base_query)
+    |> select([r], map(r, [:arrival_city]))
+
+  except_query
+  |> subquery()
+  |> order_by([u], u.arrival_city)
+  |> select([u], u.arrival_city)
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 21:10:12.791 [debug] QUERY OK db=324.5ms queue=1.2ms idle=631.4ms
+: SELECT s0."arrival_city" FROM (SELECT sr0."arrival_city" AS "arrival_city" FROM "routes" AS sr0 WHERE (sr0."departure_city" = 'St. Petersburg') EXCEPT (SELECT r0."arrival_city" FROM "routes" AS r0 WHERE (r0."departure_city" = 'Moscow'))) AS s0 ORDER BY s0."arrival_city" []
+:
+: ["Cherepovets", "Irkutsk", "Kaluga", "Moscow", "Yakutia", "Yakutsk",
+:  "Yaroslavl"]
+
+Конечно, при выполнении этих операций можно соединять не только две таблицы, но
+и большее их число. При этом нужно либо учитывать приоритеты выполнения
+операций, либо использовать скобки. Согласно документации ~INTERSECT~ связывает
+свои подзапросы сильнее, чем ~UNION~, а ~EXCEPT~ связывает свои подзапросы так
+же сильно, как ~UNION~.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
