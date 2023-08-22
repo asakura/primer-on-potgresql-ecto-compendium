@@ -7045,6 +7045,36 @@ Referenced by:
 операций, либо использовать скобки. Согласно документации ~INTERSECT~ связывает
 свои подзапросы сильнее, чем ~UNION~, а ~EXCEPT~ связывает свои подзапросы так
 же сильно, как ~UNION~.
+** Агрегирование и группировка
+Для расчета среднего значения по столбцу используется функция ~avg~ (от слова
+~average~).
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT avg(total_amount) FROM bookings;
+#+END_SRC
+
+#+RESULTS:
+|                avg |
+|--------------------|
+| 79299.069731089332 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from b in Booking,
+    select: avg(b.total_amount)
+
+  # macro example
+  Booking
+  |> select([b], avg(b.total_amount))
+
+  # shortcut example
+  Repo.aggregate(Booking, :avg, :total_amount)
+#+END_SRC
+
+#+RESULTS:
+: 21:12:16.830 [debug] QUERY OK source="bookings" db=93.9ms decode=0.5ms queue=0.4ms idle=1.3ms
+: SELECT avg(b0."total_amount") FROM "bookings" AS b0 []
+: >>> : #Decimal<79299.069731089332>
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
