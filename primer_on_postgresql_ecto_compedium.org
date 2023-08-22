@@ -6712,6 +6712,176 @@ Referenced by:
 :   %{count: 4, max_sum: 1200000, min_sum: 1100000},
 :   %{count: 2, max_sum: 1300000, min_sum: 1200000}
 : ]
+
+В команде ~SELECT~ предусмотрены средства для выполнения операций с выборками,
+как с множествами, а именно:
+- ~UNION~ для вычисления объединения множеств строк из двух выборок;
+- ~INTERSECT~ для вычисления пересечения множеств строк из двух выборок;
+- ~EXCEPT~ для вычисления разности множеств строк из двух выборок.
+
+Запросы должны возвращать одинаковое число столбцов, типы данных у столбцов
+также должны совпадать.
+
+Начнем с операции *объединения множеств строк* — ~UNION~. Строка включается в
+итоговое множество (выборку), если она присутствует хотя бы в одном из них.
+Строки-дубликаты в результирующее множество не включаются. Для их включениянужно
+использовать ~UNION ALL~.
+
+Вопрос: в какие города можно улететь либо из Москвы, либо из Санкт-Петербурга?
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT arrival_city
+    FROM routes
+   WHERE departure_city = 'Moscow'
+
+  UNION
+
+  SELECT arrival_city
+    FROM routes
+   WHERE departure_city = 'St. Petersburg'
+   ORDER BY arrival_city;
+#+END_SRC
+
+#+RESULTS:
+| arrival_city      |
+|-------------------|
+| Abakan            |
+| Anadyr            |
+| Anapa             |
+| Arkhangelsk       |
+| Astrakhan         |
+| Barnaul           |
+| Belgorod          |
+| Beloyarsky        |
+| Beslan            |
+| Bratsk            |
+| Bryansk           |
+| Bugulma           |
+| Cheboksary        |
+| Chelyabinsk       |
+| Cherepovets       |
+| Elista            |
+| Gelendzhik        |
+| Gorno-Altaysk     |
+| Grozny            |
+| Irkutsk           |
+| Izhevsk           |
+| Kaliningrad       |
+| Kaluga            |
+| Kazan             |
+| Kemorovo          |
+| Khabarovsk        |
+| Khanty-Mansiysk   |
+| Kirov             |
+| Krasnodar         |
+| Krasnoyarsk       |
+| Kurgan            |
+| Kursk             |
+| Lipetsk           |
+| Magnetiogorsk     |
+| Makhachkala       |
+| Mineralnye Vody   |
+| Mirnyj            |
+| Moscow            |
+| Murmansk          |
+| Nadym             |
+| Nalchik           |
+| Naryan-Mar        |
+| Nefteyugansk      |
+| Neryungri         |
+| Nizhnevartovsk    |
+| Nizhniy Novgorod  |
+| Norilsk           |
+| Novosibirsk       |
+| Novy Urengoy      |
+| Noyabrsk          |
+| Nyagan            |
+| Omsk              |
+| Orenburg          |
+| Orsk              |
+| Penza             |
+| Perm              |
+| Petropavlovsk     |
+| Petrozavodsk      |
+| Pskov             |
+| Rostov            |
+| Salekhard         |
+| Samara            |
+| Saransk           |
+| Saratov           |
+| Sochi             |
+| Sovetskiy         |
+| Stavropol         |
+| St. Petersburg    |
+| Syktyvkar         |
+| Tambow            |
+| Tomsk             |
+| Tyumen            |
+| Ufa               |
+| Ulan-ude          |
+| Ulyanovsk         |
+| Uraj              |
+| Usinsk            |
+| Vladivostok       |
+| Volgograd         |
+| Vorkuta           |
+| Voronezh          |
+| Yakutia           |
+| Yakutsk           |
+| Yaroslavl         |
+| Yekaterinburg     |
+| Yoshkar-Ola       |
+| Yuzhno-Sakhalinsk |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  base_query =
+    from r in Route,
+      where: r.departure_city == "St. Petersburg",
+      select: map(r, [:arrival_city])
+
+  union_query =
+    from r in Route,
+      where: r.departure_city == "Moscow",
+      union: ^base_query,
+      select: map(r, [:arrival_city])
+
+  from u in subquery(union_query),
+    select: u.arrival_city,
+    order_by: u.arrival_city
+
+  # macro example
+  base_query =
+    Route
+    |> where([r], r.departure_city == "St. Petersburg")
+    |> select([r], map(r, [:arrival_city]))
+
+  union_query =
+    Route
+    |> where([r], r.departure_city == "Moscow")
+    |> union(^base_query)
+    |> select([r], map(r, [:arrival_city]))
+
+  union_query
+  |> subquery()
+  |> order_by([u], u.arrival_city)
+  |> select([u], u.arrival_city)
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 21:10:12.141 [debug] QUERY OK db=299.7ms decode=1.0ms queue=1.1ms idle=2.5ms
+: SELECT s0."arrival_city" FROM (SELECT sr0."arrival_city" AS "arrival_city" FROM "routes" AS sr0 WHERE (sr0."departure_city" = 'Moscow') UNION (SELECT r0."arrival_city" FROM "routes" AS r0 WHERE (r0."departure_city" = 'St. Petersburg'))) AS s0 ORDER BY s0."arrival_city" []
+: >>> :
+: ["Abakan", "Anadyr", "Anapa", "Arkhangelsk", "Astrakhan", "Barnaul", "Belgorod",
+:  "Beloyarsky", "Beslan", "Bratsk", "Bryansk", "Bugulma", "Cheboksary",
+:  "Chelyabinsk", "Cherepovets", "Elista", "Gelendzhik", "Gorno-Altaysk",
+:  "Grozny", "Irkutsk", "Izhevsk", "Kaliningrad", "Kaluga", "Kazan", "Kemorovo",
+:  "Khabarovsk", "Khanty-Mansiysk", "Kirov", "Krasnodar", "Krasnoyarsk", "Kurgan",
+:  "Kursk", "Lipetsk", "Magnetiogorsk", "Makhachkala", "Mineralnye Vody",
+:  "Mirnyj", "Moscow", "Murmansk", "Nadym", "Nalchik", "Naryan-Mar",
+:  "Nefteyugansk", "Neryungri", "Nizhnevartovsk", "Nizhniy Novgorod", "Norilsk",
+:  "Novosibirsk", "Novy Urengoy", "Noyabrsk", ...]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
