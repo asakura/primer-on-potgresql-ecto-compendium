@@ -6882,6 +6882,89 @@ Referenced by:
 :  "Mirnyj", "Moscow", "Murmansk", "Nadym", "Nalchik", "Naryan-Mar",
 :  "Nefteyugansk", "Neryungri", "Nizhnevartovsk", "Nizhniy Novgorod", "Norilsk",
 :  "Novosibirsk", "Novy Urengoy", "Noyabrsk", ...]
+
+Рассмотрим операцию *пересечения множеств строк* — ~INTERSECT~. Строка
+включается в итоговое множество (выборку), если она присутствует в каждом из
+них. Строки-дубликаты в результирующее множество не включаются. Для их включения
+нужно использовать ~INTERSECT ALL~.
+
+Вопрос: в какие города можно улететь как из Москвы, так и из Санкт-Петербурга?
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT arrival_city
+    FROM routes
+   WHERE departure_city = 'Moscow'
+
+  INTERSECT
+
+  SELECT arrival_city
+    FROM routes
+   WHERE departure_city = 'St. Petersburg'
+   ORDER BY arrival_city;
+#+END_SRC
+
+#+RESULTS:
+| arrival_city     |
+|------------------|
+| Cheboksary       |
+| Elista           |
+| Kazan            |
+| Khabarovsk       |
+| Kirov            |
+| Neryungri        |
+| Nizhnevartovsk   |
+| Nizhniy Novgorod |
+| Noyabrsk         |
+| Orenburg         |
+| Sovetskiy        |
+| Tambow           |
+| Tyumen           |
+| Vorkuta          |
+| Voronezh         |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  base_query =
+    from r in Route,
+    where: r.departure_city == "St. Petersburg",
+    select: map(r, [:arrival_city])
+
+  intersect_query =
+    from r in Route,
+    where: r.departure_city == "Moscow",
+    intersect: ^base_query,
+    select: map(r, [:arrival_city])
+
+  from u in subquery(intersect_query),
+    order_by: u.arrival_city,
+    select: u.arrival_city
+
+  # macro example
+  base_query =
+    Route
+    |> where([r], r.departure_city == "St. Petersburg")
+    |> select([r], map(r, [:arrival_city]))
+
+  intersect_query =
+    Route
+    |> where([r], r.departure_city == "Moscow")
+    |> intersect(^base_query)
+    |> select([r], map(r, [:arrival_city]))
+
+  intersect_query
+  |> subquery()
+  |> order_by([u], u.arrival_city)
+  |> select([u], u.arrival_city)
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 21:10:12.464 [debug] QUERY OK db=316.0ms queue=1.8ms idle=312.9ms
+: SELECT s0."arrival_city" FROM (SELECT sr0."arrival_city" AS "arrival_city" FROM "routes" AS sr0 WHERE (sr0."departure_city" = 'Moscow') INTERSECT (SELECT r0."arrival_city" FROM "routes" AS r0 WHERE (r0."departure_city" = 'St. Petersburg'))) AS s0 ORDER BY s0."arrival_city" []
+: >>> :
+: ["Cheboksary", "Elista", "Kazan", "Khabarovsk", "Kirov", "Neryungri",
+:  "Nizhnevartovsk", "Nizhniy Novgorod", "Noyabrsk", "Orenburg", "Sovetskiy",
+:  "Tambow", "Tyumen", "Vorkuta", "Voronezh"]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
