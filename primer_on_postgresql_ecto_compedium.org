@@ -7133,6 +7133,180 @@ Referenced by:
 : 21:12:17.025 [debug] QUERY OK source="bookings" db=93.2ms queue=0.6ms idle=201.6ms
 : SELECT min(b0."total_amount") FROM "bookings" AS b0 []
 : >>> : #Decimal<3400.00>
+
+Первый будет таким: давайте подсчитаем, сколько маршрутов предусмотрено из
+Москвы в другие города. При формировании запроса не будем учитывать частоту
+рейсов в неделю, т.е. независимо от того, выполняется какой-то рейс один раз в
+неделю или семь раз, он учитывается только однократно.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT arrival_city, count(*)
+    FROM routes
+   WHERE departure_city = 'Moscow'
+   GROUP BY arrival_city
+   ORDER BY count DESC;
+#+END_SRC
+
+#+RESULTS:
+| arrival_city      | count |
+|-------------------+-------|
+| St. Petersburg    |    12 |
+| Bryansk           |     9 |
+| Ulyanovsk         |     5 |
+| Petrozavodsk      |     4 |
+| Yoshkar-Ola       |     4 |
+| Penza             |     3 |
+| Kemorovo          |     3 |
+| Barnaul           |     3 |
+| Kurgan            |     3 |
+| Rostov            |     3 |
+| Anadyr            |     3 |
+| Gelendzhik        |     3 |
+| Sovetskiy         |     3 |
+| Stavropol         |     2 |
+| Astrakhan         |     2 |
+| Tambow            |     2 |
+| Tomsk             |     2 |
+| Makhachkala       |     2 |
+| Beslan            |     2 |
+| Murmansk          |     2 |
+| Usinsk            |     2 |
+| Kaliningrad       |     2 |
+| Volgograd         |     2 |
+| Vorkuta           |     2 |
+| Naryan-Mar        |     2 |
+| Yuzhno-Sakhalinsk |     2 |
+| Nefteyugansk      |     2 |
+| Bugulma           |     2 |
+| Khanty-Mansiysk   |     2 |
+| Nizhniy Novgorod  |     2 |
+| Novosibirsk       |     2 |
+| Novy Urengoy      |     2 |
+| Noyabrsk          |     2 |
+| Nyagan            |     2 |
+| Omsk              |     2 |
+| Kirov             |     2 |
+| Cheboksary        |     2 |
+| Pskov             |     2 |
+| Elista            |     2 |
+| Saransk           |     2 |
+| Saratov           |     2 |
+| Sochi             |     2 |
+| Nizhnevartovsk    |     1 |
+| Anapa             |     1 |
+| Arkhangelsk       |     1 |
+| Belgorod          |     1 |
+| Beloyarsky        |     1 |
+| Bratsk            |     1 |
+| Chelyabinsk       |     1 |
+| Gorno-Altaysk     |     1 |
+| Grozny            |     1 |
+| Izhevsk           |     1 |
+| Kazan             |     1 |
+| Khabarovsk        |     1 |
+| Krasnodar         |     1 |
+| Krasnoyarsk       |     1 |
+| Kursk             |     1 |
+| Lipetsk           |     1 |
+| Magnetiogorsk     |     1 |
+| Mineralnye Vody   |     1 |
+| Mirnyj            |     1 |
+| Nadym             |     1 |
+| Nalchik           |     1 |
+| Neryungri         |     1 |
+| Abakan            |     1 |
+| Norilsk           |     1 |
+| Orenburg          |     1 |
+| Orsk              |     1 |
+| Perm              |     1 |
+| Petropavlovsk     |     1 |
+| Salekhard         |     1 |
+| Samara            |     1 |
+| Syktyvkar         |     1 |
+| Tyumen            |     1 |
+| Ufa               |     1 |
+| Ulan-ude          |     1 |
+| Uraj              |     1 |
+| Vladivostok       |     1 |
+| Voronezh          |     1 |
+| Yekaterinburg     |     1 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from r in Route,
+    where: r.departure_city == "Moscow",
+    group_by: r.arrival_city,
+    order_by: [desc: selected_as(:count)],
+    select: map(r, [:arrival_city]),
+    select_merge: %{count: selected_as(count(), :count)}
+
+  # macro example
+  Route
+  |> where([r], r.departure_city == "Moscow")
+  |> group_by([r], r.arrival_city)
+  |> order_by([r], desc: selected_as(:count))
+  |> select([r], map(r, [:arrival_city]))
+  |> select_merge(%{count: selected_as(count(), :count)})
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 09:42:59.678 [debug] QUERY OK source="routes" db=117.0ms idle=1826.8ms
+: SELECT r0."arrival_city", count(*) AS "count" FROM "routes" AS r0 WHERE (r0."departure_city" = 'Moscow') GROUP BY r0."arrival_city" ORDER BY "count" DESC []
+: >>> :
+: [
+:   %{arrival_city: "St. Petersburg", count: 12},
+:   %{arrival_city: "Bryansk", count: 9},
+:   %{arrival_city: "Ulyanovsk", count: 5},
+:   %{arrival_city: "Petrozavodsk", count: 4},
+:   %{arrival_city: "Yoshkar-Ola", count: 4},
+:   %{arrival_city: "Penza", count: 3},
+:   %{arrival_city: "Kemorovo", count: 3},
+:   %{arrival_city: "Barnaul", count: 3},
+:   %{arrival_city: "Kurgan", count: 3},
+:   %{arrival_city: "Rostov", count: 3},
+:   %{arrival_city: "Anadyr", count: 3},
+:   %{arrival_city: "Gelendzhik", count: 3},
+:   %{arrival_city: "Sovetskiy", count: 3},
+:   %{arrival_city: "Stavropol", count: 2},
+:   %{arrival_city: "Astrakhan", count: 2},
+:   %{arrival_city: "Tambow", count: 2},
+:   %{arrival_city: "Tomsk", count: 2},
+:   %{arrival_city: "Makhachkala", count: 2},
+:   %{arrival_city: "Beslan", count: 2},
+:   %{arrival_city: "Murmansk", count: 2},
+:   %{arrival_city: "Usinsk", count: 2},
+:   %{arrival_city: "Kaliningrad", count: 2},
+:   %{arrival_city: "Volgograd", count: 2},
+:   %{arrival_city: "Vorkuta", count: 2},
+:   %{arrival_city: "Naryan-Mar", count: 2},
+:   %{arrival_city: "Yuzhno-Sakhalinsk", count: 2},
+:   %{arrival_city: "Nefteyugansk", count: 2},
+:   %{arrival_city: "Bugulma", count: 2},
+:   %{arrival_city: "Khanty-Mansiysk", count: 2},
+:   %{arrival_city: "Nizhniy Novgorod", count: 2},
+:   %{arrival_city: "Novosibirsk", count: 2},
+:   %{arrival_city: "Novy Urengoy", count: 2},
+:   %{arrival_city: "Noyabrsk", count: 2},
+:   %{arrival_city: "Nyagan", count: 2},
+:   %{arrival_city: "Omsk", count: 2},
+:   %{arrival_city: "Kirov", count: 2},
+:   %{arrival_city: "Cheboksary", count: 2},
+:   %{arrival_city: "Pskov", count: 2},
+:   %{arrival_city: "Elista", count: 2},
+:   %{arrival_city: "Saransk", count: 2},
+:   %{arrival_city: "Saratov", count: 2},
+:   %{arrival_city: "Sochi", count: 2},
+:   %{arrival_city: "Nizhnevartovsk", count: 1},
+:   %{arrival_city: "Anapa", count: 1},
+:   %{arrival_city: "Arkhangelsk", count: 1},
+:   %{arrival_city: "Belgorod", count: 1},
+:   %{arrival_city: "Beloyarsky", count: 1},
+:   %{arrival_city: "Bratsk", count: 1},
+:   %{arrival_city: "Chelyabinsk", ...},
+:   %{...},
+:   ...
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
