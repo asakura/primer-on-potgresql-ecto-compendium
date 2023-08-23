@@ -7363,6 +7363,64 @@ Referenced by:
 В этом запросе используется функция ~array_length~, возвращающая количество
 элементов в указанном измерении массива. Поскольку массив одномерный, то вторым
 параметром функции будет число 1 — первое измерение.
+
+При выполнении выборок можно с помощью условий, заданных в предложении ~WHERE~,
+сузить множество выбираемых строк. Аналогичная возможность существует и при
+выполнении группировок: можно включить в результирующее множествоне все строки,
+а лишь те, которые удовлетворяют некоторому условию. Это условие можно задать
+впредложении ~HAVING~. Важно помнить, что предложение ~WHERE~ работает с
+отдельными строками еще до выполнения группировки с помощью ~GROUP BY~, а
+предложение ~HAVING~ — уже после выполнения группировки.
+
+В качестве примера приведем такой запрос: определить, сколько существует
+маршрутов из каждого города в другие города, и вывести названия городов, из
+которыхв другие города существует не менее 15 маршрутов.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT departure_city, count(*)
+    FROM routes
+   GROUP BY departure_city
+  HAVING count(*) >= 15
+   ORDER BY count DESC;
+#+END_SRC
+
+#+RESULTS:
+| departure_city | count |
+|----------------+-------|
+| Moscow         |   154 |
+| St. Petersburg |    35 |
+| Novosibirsk    |    19 |
+| Yekaterinburg  |    15 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from r in Route,
+    group_by: r.departure_city,
+    having: count() >= 15,
+    order_by: [desc: selected_as(:count)],
+    select: map(r, [:departure_city]),
+    select_merge: %{num_routes: selected_as(count(), :count)}
+
+  # macro example
+  Route
+  |> group_by([r], r.departure_city)
+  |> having(count() >= 15)
+  |> order_by([r], desc: selected_as(:count))
+  |> select([r], map(r, [:departure_city]))
+  |> select_merge([], %{num_routes: selected_as(count(), :count)})
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 10:53:37.668 [debug] QUERY OK source="routes" db=89.7ms idle=1357.6ms
+: SELECT r0."departure_city" FROM "routes" AS r0 GROUP BY r0."departure_city" HAVING (count(*) >= 15) ORDER BY count(*) DESC []
+: >>> :
+: [
+:   %{departure_city: "Moscow"},
+:   %{departure_city: "St. Petersburg"},
+:   %{departure_city: "Novosibirsk"},
+:   %{departure_city: "Yekaterinburg"}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
