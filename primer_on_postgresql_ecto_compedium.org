@@ -7307,6 +7307,62 @@ Referenced by:
 :   %{...},
 :   ...
 : ]
+
+В качестве второго примера рассмотрим ситуацию, когда руководству компании
+потребовалась обобщенная информация по частоте выполнения рейсов, а именно:
+сколько рейсов выполняется ежедневно, сколько рейсов — шесть дней в неделю, пять
+и т.д.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT array_length(days_of_week, 1) AS days_per_week, count(*) AS num_routes
+    FROM routes
+   GROUP BY days_per_week
+   ORDER BY 1 desc;
+#+END_SRC
+
+#+RESULTS:
+| days_per_week | num_routes |
+|---------------+------------|
+|             7 |        482 |
+|             3 |         54 |
+|             2 |         89 |
+|             1 |         85 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from r in Route,
+    group_by: selected_as(:days_per_week),
+    order_by: [desc: selected_as(:days_per_week)],
+    select: %{
+      days_per_week: selected_as(fragment("array_length(?, 1)", r.days_of_week), :days_per_week),
+      num_routes: count()
+    }
+
+  # macro example
+  Route
+  |> group_by([r], selected_as(:days_per_week))
+  |> order_by(desc: selected_as(:days_per_week))
+  |> select([r], %{
+    days_per_week: selected_as(fragment("array_length(?, 1)", r.days_of_week), :days_per_week),
+    num_routes: count()
+  })
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 21:12:17.335 [debug] QUERY OK source="routes" db=152.1ms queue=1.1ms idle=452.4ms
+: SELECT array_length(r0."days_of_week", 1) AS days_per_week, count(*) FROM "routes" AS r0 GROUP BY days_per_week ORDER BY 1 DESC []
+: >>> :
+: [
+:   %{days_per_week: 7, num_routes: 482},
+:   %{days_per_week: 3, num_routes: 54},
+:   %{days_per_week: 2, num_routes: 89},
+:   %{days_per_week: 1, num_routes: 85}
+: ]
+
+В этом запросе используется функция ~array_length~, возвращающая количество
+элементов в указанном измерении массива. Поскольку массив одномерный, то вторым
+параметром функции будет число 1 — первое измерение.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
