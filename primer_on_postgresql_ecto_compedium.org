@@ -7104,6 +7104,35 @@ Referenced by:
 : 21:12:16.930 [debug] QUERY OK source="bookings" db=94.8ms queue=0.6ms idle=105.7ms
 : SELECT max(b0."total_amount") FROM "bookings" AS b0 [
 : >>> : #Decimal<1308700.00>
+
+Для получения минимального значения по столбцу используется функция ~min~.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT min(total_amount) FROM bookings;
+#+END_SRC
+
+#+RESULTS:
+|     min |
+|---------|
+| 3400.00 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from b in Booking,
+    select: min(b.total_amount)
+
+  # macro example
+  Booking
+  |> select([b], min(b.total_amount))
+
+  # shortcut example
+  Repo.aggregate(Booking, :min, :total_amount)
+#+END_SRC
+
+#+RESULTS:
+: 21:12:17.025 [debug] QUERY OK source="bookings" db=93.2ms queue=0.6ms idle=201.6ms
+: SELECT min(b0."total_amount") FROM "bookings" AS b0 []
+: >>> : #Decimal<3400.00>
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
