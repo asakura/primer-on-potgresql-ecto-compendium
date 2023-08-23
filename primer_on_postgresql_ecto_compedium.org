@@ -7075,6 +7075,35 @@ Referenced by:
 : 21:12:16.830 [debug] QUERY OK source="bookings" db=93.9ms decode=0.5ms queue=0.4ms idle=1.3ms
 : SELECT avg(b0."total_amount") FROM "bookings" AS b0 []
 : >>> : #Decimal<79299.069731089332>
+
+Для получения максимального значения по столбцу используется функция ~max~.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT max(total_amount) FROM bookings;
+#+END_SRC
+
+#+RESULTS:
+|        max |
+|------------|
+| 1308700.00 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from b in Booking,
+    select: max(b.total_amount)
+
+  # macro example
+  Booking
+  |> select([b], max(b.total_amount))
+
+  # shortcut example
+  Repo.aggregate(Booking, :max, :total_amount)
+#+END_SRC
+
+#+RESULTS:
+: 21:12:16.930 [debug] QUERY OK source="bookings" db=94.8ms queue=0.6ms idle=105.7ms
+: SELECT max(b0."total_amount") FROM "bookings" AS b0 [
+: >>> : #Decimal<1308700.00>
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
