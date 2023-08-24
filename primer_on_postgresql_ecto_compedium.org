@@ -7459,6 +7459,181 @@ Referenced by:
 : 11:05:53.109 [debug] QUERY OK source="airports" db=0.3ms idle=1069.8ms
 : SELECT a0."city", count(*) FROM "airports" AS a0 GROUP BY a0."city" HAVING (count(*) > 1) []
 : >>> : [%{city: "Ulyanovsk", num_airports: 2}, %{city: "Moscow", num_airports: 3}]
+
+Кроме обычных агрегатных функций существуют и так называемые *оконные функции*
+(*window functions*). Эти функции предоставляют возможность производить
+вычисления на множестве строк, логически связанных с текущей строкой, т.е.
+имеющих то или иное отношение к ней.
+
+При работе с оконными функциями используются концепции *раздела* (*partition*) и
+*оконного кадра* (*window frame*).
+
+Предположим, что руководство нашей компании хочет усовершенствовать тарифную
+политику и с этой целью просит нас предоставить сведения о распределении
+количества проданных билетов на некоторые рейсы во времени. Количество проданных
+билетов должно выводиться в виде накопленного показателя, суммирование должно
+производиться в пределах каждого календарного месяца.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT b.book_ref,
+         b.book_date,
+         extract('month' from b.book_date) AS month,
+         extract('day' from b.book_date) AS day,
+         count(*) OVER (
+           PARTITION BY date_trunc('month', b.book_date)
+           ORDER BY b.book_date
+         ) AS count
+    FROM ticket_flights tf
+         JOIN tickets t
+             ON tf.ticket_no = t.ticket_no
+         JOIN bookings b
+             ON t.book_ref = b.book_ref
+   WHERE tf.flight_id = 2
+   ORDER BY b.book_date
+   LIMIT 13;
+#+END_SRC
+
+Таким образом, в нашем примере в качестве *раздела* (*partition*) будет
+выступать множество строк, у которых даты продажи билета (т.е. даты
+бронирования) относятся кодному и тому же месяцу. В результате в полученной
+выборке, пример которой приведен ниже, будет сформировано два раздела.
+
+#+RESULTS:
+| book_ref | book_date                | month | day | count |
+|----------+--------------------------+-------+-----+-------|
+| BB5AB9   | 2017-05-08 01:19:00+02   |     5 |   8 |     1 |
+| /06979C/ | *2017-05-12 12:57:00+02* |     5 |  12 |   *3* |
+| /06979C/ | *2017-05-12 12:57:00+02* |     5 |  12 |   *3* |
+| 9DC422   | 2017-05-14 02:42:00+02   |     5 |  14 |     4 |
+| /3C0E7C/ | *2017-05-14 10:43:00+02* |     5 |  14 |   *6* |
+| /3C0E7C/ | *2017-05-14 10:43:00+02* |     5 |  14 |   *6* |
+| EC77FB   | 2017-05-15 04:42:00+02   |     5 |  15 |     7 |
+| E0A9F8   | 2017-05-15 08:26:00+02   |     5 |  15 |     8 |
+| EFA312   | 2017-05-15 12:40:00+02   |     5 |  15 |     9 |
+| /759BF2/ | *2017-05-16 02:51:00+02* |     5 |  16 |  *11* |
+| /759BF2/ | *2017-05-16 02:51:00+02* |     5 |  16 |  *11* |
+| E03513   | 2017-05-16 06:31:00+02   |     5 |  16 |    12 |
+| 37F9FF   | 2017-05-17 00:31:00+02   |     5 |  17 |    13 |
+
+Понятие *оконного кадра* (*window frame*) является важным, поскольку многие
+оконные функции работают не со всеми строками раздела, а только с теми, которые
+образуют оконный кадр текущей строки. Если строки в разделе не упорядочены, то
+оконным кадром текущей строки по умолчанию считается множество всех строк
+раздела. Однако в том случае, когда строки в разделе упорядочены по какому-то
+критерию, тогда в состав оконного кадра по умолчанию включаются строки, начиная
+с первой строки раздела и заканчивая текущей строкой. Если же существуют строки,
+имеющие такое же значение критерия сортировки, что и текущая строка, и
+расположенные после нее, то они также включаются в состав оконного кадра текущей
+строки.
+
+#+BEGIN_SRC elixir :exports both :eval no
+  extract = fn
+    :month, from, field ->
+      dynamic([{^from, q}], fragment("extract('month' FROM ?)", field(q, ^field)))
+
+    :day, from, field ->
+      dynamic([{^from, q}], fragment("extract('day' FROM ?)", field(q, ^field)))
+  end
+
+  # keyword example
+
+  from tf in TicketFlights,
+    join: t in assoc(tf, :ticket),
+    join: b in assoc(t, :booking),
+    as: :booking,
+    where: tf.flight_id == 2,
+    windows: [
+      month: [
+        partition_by: fragment("date_trunc('month', ?)", b.book_date),
+        order_by: b.book_date
+      ]
+    ],
+    limit: 13,
+    select: map(b, [:book_ref, :book_date]),
+    select_merge:
+      ^%{
+        month: extract.(:month, :booking, :book_date),
+        day: extract.(:day, :booking, :book_date)
+      },
+    select_merge: %{
+      count: over(count(), :month)
+    }
+
+  # macro example
+  TicketFlights
+  |> from(as: :ticket_flights)
+  |> join(:inner, [ticket_flights: tf], t in assoc(tf, :ticket), as: :ticket)
+  |> join(:inner, [ticket: t], b in assoc(t, :booking), as: :booking)
+  |> where([ticket_flights: tf], tf.flight_id == 2)
+  |> windows([ticket_flights: tf, booking: b],
+    month: [
+      partition_by: fragment("date_trunc('month', ?)", b.book_date),
+      order_by: b.book_date
+    ]
+  )
+  |> limit(13)
+  |> select([booking: b], map(b, [:book_ref, :book_date]))
+  |> select_merge(
+    [booking: b],
+    ^%{
+      month: extract.(:month, :booking, :book_date),
+      day: extract.(:day, :booking, :book_date)
+    }
+  )
+  |> select_merge(%{
+    count: over(count(), :month)
+  })
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 11:56:54.104 [debug] QUERY OK source="ticket_flights" db=98.3ms queue=0.3ms idle=1858.3ms
+: SELECT b2."book_ref", b2."book_date", extract('day' FROM b2."book_date"), extract('month' FROM b2."book_date"), count(*) OVER "month" FROM "ticket_flights" AS t0 INNER JOIN "tickets" AS t1 ON t1."ticket_no" = t0."ticket_no" INNER JOIN "bookings" AS b2 ON b2."book_ref" = t1."book_ref" WHERE (t0."flight_id" = 2) WINDOW "month" AS (PARTITION BY date_trunc('month', b2."book_date") ORDER BY b2."book_date") LIMIT 13 []
+: >>> :
+: [
+:   %{book_date: ~U[2017-05-07 23:19:00Z], book_ref: "BB5AB9", count: 1, day: Decimal.new("8"), month: Decimal.new("5")},
+:   %{book_date: ~U[2017-05-12 10:57:00Z], book_ref: "06979C", count: 3, day: Decimal.new("12"), month: Decimal.new("5")},
+:   %{book_date: ~U[2017-05-12 10:57:00Z], book_ref: "06979C", count: 3, day: Decimal.new("12"), month: Decimal.new("5")},
+:   %{book_date: ~U[2017-05-14 00:42:00Z], book_ref: "9DC422", count: 4, day: Decimal.new("14"), month: Decimal.new("5")},
+:   %{book_date: ~U[2017-05-14 08:43:00Z], book_ref: "3C0E7C", count: 6, day: Decimal.new("14"), month: Decimal.new("5")},
+:   %{book_date: ~U[2017-05-14 08:43:00Z], book_ref: "3C0E7C", count: 6, day: Decimal.new("14"), month: Decimal.new("5")},
+:   %{book_date: ~U[2017-05-15 02:42:00Z], book_ref: "EC77FB", count: 7, day: Decimal.new("15"), month: Decimal.new("5")},
+:   %{book_date: ~U[2017-05-15 06:26:00Z], book_ref: "E0A9F8", count: 8, day: Decimal.new("15"), month: Decimal.new("5")},
+:   %{book_date: ~U[2017-05-15 10:40:00Z], book_ref: "EFA312", count: 9, day: Decimal.new("15"), month: Decimal.new("5")},
+:   %{book_date: ~U[2017-05-16 00:51:00Z], book_ref: "759BF2", count: 11, day: Decimal.new("16"), month: Decimal.new("5")},
+:   %{book_date: ~U[2017-05-16 00:51:00Z], book_ref: "759BF2", count: 11, day: Decimal.new("16"), month: Decimal.new("5")},
+:   %{book_date: ~U[2017-05-16 04:31:00Z], book_ref: "E03513", count: 12, day: Decimal.new("16"), month: Decimal.new("5")},
+:   %{book_date: ~U[2017-05-16 22:31:00Z], book_ref: "37F9FF", count: 13, day: Decimal.new("17"), month: Decimal.new("5")}
+: ]
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  count(*) OVER (
+    PARTITION BY date_trunc('month', b.book_date)
+    ORDER BY b.book_date
+  ) AS count
+#+END_SRC
+
+В этой конструкции обязательным является ключевое слово ~OVER~. Функция ~count~
+— это обычная агрегатная функция, но если вслед за ней идет это ключевое слово,
+то она становится оконной функцией. Предложение ~PARTITION BY~ задает правило
+разбиения строк выборки на разделы. Предложение ~ORDER BY~ предписывает порядок
+сортировки строк в разделах.
+
+Обобщая приведенные объяснения, можно сказать, что раздел включает в себя все
+строки выборки, имеющие в некотором смысле одинаковые свойства, например,
+одинаковые значения определенных выражений, задаваемых с помощью предложения
+~PARTITION BY~. Это могут быть выражения, построенные на основе одного или
+нескольких столбцов таблицы (или таблиц, участвующих в соединении).
+
+Оконный кадр состоит из подмножества строк данного раздела и привязан к текущей
+строке. Для определения границ кадра важным является наличие предложения ~ORDER
+BY~ при формировании раздела.
+
+Оконные функции, в отличие от обычных агрегатных функций, не требуют группировки
+строк, а работают на уровне отдельных (не сгруппированных) строк. Однако если в
+запросе присутствуют предложения ~GROUP BY~ и ~HAVING~, тогда оконные функции
+вызываются уже после них. В таком случае оконные функции будут работать со
+строками, являющимися результатом группировки.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
