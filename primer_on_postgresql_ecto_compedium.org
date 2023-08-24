@@ -7634,6 +7634,97 @@ BY~ при формировании раздела.
 запросе присутствуют предложения ~GROUP BY~ и ~HAVING~, тогда оконные функции
 вызываются уже после них. В таком случае оконные функции будут работать со
 строками, являющимися результатом группировки.
+
+Рассмотрим еще один пример. Покажем, как с помощью оконной функции ~rank~ можно
+проранжировать аэропорты в пределах каждого часового пояса на основе их
+географической широты. Причем будем присваивать более высокий ранг тому
+аэропорту, который находится севернее.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT airport_name,
+         city,
+         round(coordinates[1]::numeric, 2) AS ltd,
+         timezone,
+         rank() OVER (
+           PARTITION BY timezone
+           ORDER BY coordinates[1] DESC
+         )
+    FROM airports
+   WHERE timezone IN ('Asia/Irkutsk', 'Asia/Krasnoyarsk')
+   ORDER BY timezone, rank;
+#+END_SRC
+
+#+RESULTS:
+| airport_name               | city          |   ltd | timezone         | rank |
+|----------------------------+---------------+-------+------------------+------|
+| Ust-Ilimsk Airport         | Ust Ilimsk    | 58.14 | Asia/Irkutsk     |    1 |
+| Ust-Kut Airport            | Ust-Kut       | 56.86 | Asia/Irkutsk     |    2 |
+| Bratsk Airport             | Bratsk        | 56.37 | Asia/Irkutsk     |    3 |
+| Irkutsk Airport            | Irkutsk       | 52.27 | Asia/Irkutsk     |    4 |
+| Ulan-Ude Airport (Mukhino) | Ulan-ude      | 51.81 | Asia/Irkutsk     |    5 |
+| Norilsk-Alykel Airport     | Norilsk       | 69.31 | Asia/Krasnoyarsk |    1 |
+| Strezhevoy Airport         | Strezhevoy    | 60.71 | Asia/Krasnoyarsk |    2 |
+| Bogashevo Airport          | Tomsk         | 56.38 | Asia/Krasnoyarsk |    3 |
+| Yemelyanovo Airport        | Krasnoyarsk   | 56.17 | Asia/Krasnoyarsk |    4 |
+| Abakan Airport             | Abakan        | 53.74 | Asia/Krasnoyarsk |    5 |
+| Barnaul Airport            | Barnaul       | 53.36 | Asia/Krasnoyarsk |    6 |
+| Gorno-Altaysk Airport      | Gorno-Altaysk | 51.97 | Asia/Krasnoyarsk |    7 |
+| Kyzyl Airport              | Kyzyl         | 51.67 | Asia/Krasnoyarsk |    8 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Airport,
+    where: a.timezone in ["Asia/Irkutsk", "Asia/Krasnoyarsk"],
+    order_by: [a.timezone, selected_as(:rank)],
+    windows: [
+      timezone: [
+        partition_by: a.timezone,
+        order_by: [desc: fragment("?[1]", a.coordinates)]
+      ]
+    ],
+    select: map(a, [:airport_name, :timezone]),
+    select_merge: %{
+      ltd: fragment("round(?[1]::numeric, 2)", a.coordinates),
+      rank: selected_as(over(rank(), :timezone), :rank)
+    }
+
+  # macro example
+  Airport
+  |> where([a], a.timezone in ["Asia/Irkutsk", "Asia/Krasnoyarsk"])
+  |> order_by([a], [a.timezone, selected_as(:rank)])
+  |> windows([a],
+    timezone: [
+      partition_by: a.timezone,
+      order_by: [desc: fragment("?[1]", a.coordinates)]
+    ]
+  )
+  |> select([a], map(a, [:airport_name, :timezone]))
+  |> select_merge([a], %{
+    ltd: fragment("round(?[1]::numeric, 2)", a.coordinates),
+    rank: selected_as(over(rank(), :timezone), :rank)
+  })
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 12:19:47.783 [debug] QUERY OK source="airports" db=0.3ms idle=1050.3ms
+: SELECT a0."airport_name", a0."timezone", round(a0."coordinates"[1]::numeric, 2), rank() OVER "timezone" AS "rank" FROM "airports" AS a0 WHERE (a0."timezone" IN ('Asia/Irkutsk','Asia/Krasnoyarsk')) WINDOW "timezone" AS (PARTITION BY a0."timezone" ORDER BY a0."coordinates"[1] DESC) ORDER BY a0."timezone", "rank" []
+: >>> :
+: [
+:   %{airport_name: "Ust-Ilimsk Airport", ltd: Decimal.new("58.14"), rank: 1, timezone: "Asia/Irkutsk"},
+:   %{airport_name: "Ust-Kut Airport", ltd: Decimal.new("56.86"), rank: 2, timezone: "Asia/Irkutsk"},
+:   %{airport_name: "Bratsk Airport", ltd: Decimal.new("56.37"), rank: 3, timezone: "Asia/Irkutsk"},
+:   %{airport_name: "Irkutsk Airport", ltd: Decimal.new("52.27"), rank: 4, timezone: "Asia/Irkutsk"},
+:   %{airport_name: "Ulan-Ude Airport (Mukhino)", ltd: Decimal.new("51.81"), rank: 5, timezone: "Asia/Irkutsk"},
+:   %{airport_name: "Norilsk-Alykel Airport", ltd: Decimal.new("69.31"), rank: 1, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Strezhevoy Airport", ltd: Decimal.new("60.71"), rank: 2, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Bogashevo Airport", ltd: Decimal.new("56.38"), rank: 3, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Yemelyanovo Airport", ltd: Decimal.new("56.17"), rank: 4, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Abakan Airport", ltd: Decimal.new("53.74"), rank: 5, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Barnaul Airport", ltd: Decimal.new("53.36"), rank: 6, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Gorno-Altaysk Airport", ltd: Decimal.new("51.97"), rank: 7, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Kyzyl Airport", ltd: Decimal.new("51.67"), rank: 8, timezone: "Asia/Krasnoyarsk"}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
