@@ -7421,6 +7421,44 @@ Referenced by:
 :   %{departure_city: "Novosibirsk"},
 :   %{departure_city: "Yekaterinburg"}
 : ]
+
+В подавляющем большинстве городов только один аэропорт, но есть и такие города,
+в которых более одного аэропорта.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT city, count(*)
+    FROM airports
+   GROUP BY city
+  HAVING count(*) > 1;
+#+END_SRC
+
+#+RESULTS:
+| city      | count |
+|-----------+-------|
+| Ulyanovsk |     2 |
+| Moscow    |     3 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Airport,
+    group_by: a.city,
+    having: count() > 1,
+    select: map(a, [:city]),
+    select_merge: %{num_airports: count()}
+
+  # macro example
+  Airport
+  |> group_by([a], a.city)
+  |> having(count() > 1)
+  |> select([a], map(a, [:city]))
+  |> select_merge(%{num_airports: count()})
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 11:05:53.109 [debug] QUERY OK source="airports" db=0.3ms idle=1069.8ms
+: SELECT a0."city", count(*) FROM "airports" AS a0 GROUP BY a0."city" HAVING (count(*) > 1) []
+: >>> : [%{city: "Ulyanovsk", num_airports: 2}, %{city: "Moscow", num_airports: 3}]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
