@@ -7871,6 +7871,53 @@ BY~ при формировании раздела.
 Приведенная схема описывает работу команды ~SELECT~ на логическом уровне, а на
 уровне реализации запросов в дело вступает планировщик, который и формирует план
 выполнения запроса.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT count(*)
+    FROM bookings
+   WHERE total_amount > (
+     SELECT avg(total_amount) FROM bookings
+   );
+#+END_SRC
+
+#+RESULTS:
+|  count |
+|--------|
+| 703366 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  avg_total_query =
+    from b in Booking,
+      select: avg(b.total_amount)
+
+  from b in Booking,
+    where: b.total_amount > subquery(avg_total_query),
+    select: count()
+
+  # macro example
+  avg_total_query = select(Booking, [b], avg(b.total_amount))
+
+  Booking
+  |> where([b], b.total_amount > subquery(avg_total_query))
+  |> select([b], count())
+
+  # shortcut example
+  Booking
+  |> where([b], b.total_amount > subquery(select(Booking, [b], avg(b.total_amount))))
+  |> Repo.aggregate(:count)
+#+END_SRC
+
+#+RESULTS:
+# 13:02:01.777 [debug] QUERY OK source="bookings" db=137.6ms idle=1653.1ms
+# SELECT count(*) FROM "bookings" AS b0 WHERE (b0."total_amount" > (SELECT avg(sb0."total_amount") FROM "bookings" AS sb0)) []
+# >>> : 703366
+
+В приведенном запросе присутствует два предложения ~SELECT~, но при этом только
+одно из них является главным в этом запросе, а другое представляет собой
+*подзапрос*. Он заключается в круглые скобки и является частью более общего
+запроса. Подзапросы могут присутствовать в предложениях ~SELECT~, ~FROM~,
+~WHERE~ и ~HAVING~, а также в предложении ~WITH~.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
