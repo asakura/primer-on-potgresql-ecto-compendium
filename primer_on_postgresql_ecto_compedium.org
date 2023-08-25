@@ -7918,6 +7918,90 @@ BY~ при формировании раздела.
 *подзапрос*. Он заключается в круглые скобки и является частью более общего
 запроса. Подзапросы могут присутствовать в предложениях ~SELECT~, ~FROM~,
 ~WHERE~ и ~HAVING~, а также в предложении ~WITH~.
+
+В приведенном примере в предложении ~WHERE~ используется так называемый
+*скалярный подзапрос*. Это означает, что в результате его выполнения
+возвращается только одно скалярное значение (один столбец и одна строка), с
+которым можно сравнивать другие скалярные значения.
+
+Если подзапрос выдает множество скалярных значений (или даже только одно), можно
+использовать такой *подзапрос в предикате IN*. Этот предикат позволяет
+организовать проверку на предмет принадлежности какого-либо значения
+определенному множеству значений.
+
+В качестве примера давайте выясним, какие маршруты существуют между городами
+часового пояса ~Asia/Krasnoyarsk~. Подзапрос будет выдавать список городов из
+этого часового пояса, а в предложении ~WHERE~ главного запроса с помощью
+предиката ~IN~ будет выполняться проверка на принадлежность города этому списку.
+При этом подзапрос выполняется только один раз для всего внешнего запроса, а не
+при обработке каждой строки из таблицы ~routes~ во внешнем запросе. Повторного
+выполнения подзапроса не требуется, т.к. его результат не зависит от значений,
+хранящихсяв таблице ~routes~. Такие подзапросы называются *некоррелированными*.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT flight_no,
+         departure_city,
+         arrival_city
+    FROM routes
+   WHERE departure_city IN (
+       SELECT city
+         FROM airports
+        WHERE timezone ~ 'Krasnoyarsk'
+     )
+     AND arrival_city IN (
+       SELECT city
+         FROM airports
+        WHERE timezone ~ 'Krasnoyarsk'
+     );
+#+END_SRC
+
+#+RESULTS:
+| flight_no | departure_city | arrival_city |
+|-----------+----------------+--------------|
+| PG0070    | Abakan         | Tomsk        |
+| PG0071    | Tomsk          | Abakan       |
+| PG0313    | Abakan         | Kyzyl        |
+| PG0314    | Kyzyl          | Abakan       |
+| PG0653    | Krasnoyarsk    | Barnaul      |
+| PG0654    | Barnaul        | Krasnoyarsk  |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  cities_query =
+    from a in Airport,
+      where: fragment("? ~ 'Krasnoyarsk'", a.timezone),
+      select: a.city
+
+  from r in Route,
+    where: r.departure_city in subquery(cities_query),
+    where: r.arrival_city in subquery(cities_query),
+    select: map(r, [:flight_no, :departure_city, :arrival_city])
+
+  # macro example
+  cities_query =
+    Airport
+    |> where([a], fragment("? ~ 'Krasnoyarsk'", a.timezone))
+    |> select([a], a.city)
+
+  Route
+  |> where([r], r.departure_city in subquery(cities_query))
+  |> where([r], r.arrival_city in subquery(cities_query))
+  |> select([r], map(r, [:flight_no, :departure_city, :arrival_city]))
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 17:44:06.301 [debug] QUERY OK source="routes" db=151.0ms idle=1566.7ms
+: SELECT r0."flight_no", r0."departure_city", r0."arrival_city" FROM "routes" AS r0 WHERE (r0."departure_city" IN (SELECT sa0."city" FROM "airports" AS sa0 WHERE (sa0."timezone" ~ 'Krasnoyarsk'))) AND (r0."arrival_city" IN (SELECT sa0."city" FROM "airports" AS sa0 WHERE (sa0."timezone" ~ 'Krasnoyarsk'))) []
+: >>> :
+: [
+:   %{arrival_city: "Tomsk", departure_city: "Abakan", flight_no: "PG0070"},
+:   %{arrival_city: "Abakan", departure_city: "Tomsk", flight_no: "PG0071"},
+:   %{arrival_city: "Kyzyl", departure_city: "Abakan", flight_no: "PG0313"},
+:   %{arrival_city: "Abakan", departure_city: "Kyzyl", flight_no: "PG0314"},
+:   %{arrival_city: "Barnaul", departure_city: "Krasnoyarsk", flight_no: "PG0653"},
+:   %{arrival_city: "Krasnoyarsk", departure_city: "Barnaul", flight_no: "PG0654"}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
