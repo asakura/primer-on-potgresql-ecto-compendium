@@ -7725,6 +7725,113 @@ BY~ при формировании раздела.
 :   %{airport_name: "Gorno-Altaysk Airport", ltd: Decimal.new("51.97"), rank: 7, timezone: "Asia/Krasnoyarsk"},
 :   %{airport_name: "Kyzyl Airport", ltd: Decimal.new("51.67"), rank: 8, timezone: "Asia/Krasnoyarsk"}
 : ]
+
+Усложним запрос — для каждого аэропорта будем вычислять разницу между его
+географической широтой и широтой, на которой находится самый северный аэропортв
+этом же часовом поясе. Поскольку в запросе используются три конструкции с
+оконными функциями и при этом способ формирования разделов и порядок сортировки
+строк в разделах один и тот же, то вводится предложение ~WINDOW~. Оно позволяет
+создать определение раздела, а затем ссылаться на него при вызове оконных
+функций. Самый северный аэропорт в каждом часовом поясе, т.е. самая первая
+строка в каждом разделе, выбирается с помощью оконной функции ~first_value~.
+Строго говоря, эта функция получает доступ к первой строке оконного кадра, а не
+раздела. Однако когда используются правила формирования оконного кадра по
+умолчанию, тогда его начало совпадает с началом раздела.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT airport_name,
+         city,
+         timezone,
+         coordinates[1] AS ltd,
+         first_value(coordinates[1])                  OVER tz AS first_in_timezone,
+         coordinates[1] - first_value(coordinates[1]) OVER tz AS delta,
+         rank()                                       OVER tz
+    FROM airports
+   WHERE timezone IN ('Asia/Irkutsk', 'Asia/Krasnoyarsk')
+  WINDOW tz AS (PARTITION BY timezone ORDER BY coordinates[1] DESC)
+   ORDER BY timezone, rank;
+#+END_SRC
+
+#+RESULTS:
+| airport_name               | city          | timezone         |                lts | first_in_timezone |               delta | rank |
+|----------------------------+---------------+------------------+--------------------+-------------------+---------------------+------|
+| Ust-Ilimsk Airport         | Ust Ilimsk    | Asia/Irkutsk     |  58.13610076904297 | 58.13610076904297 |                   0 |    1 |
+| Ust-Kut Airport            | Ust-Kut       | Asia/Irkutsk     |   56.8567008972168 | 58.13610076904297 | -1.2793998718261719 |    2 |
+| Bratsk Airport             | Bratsk        | Asia/Irkutsk     | 56.370601654052734 | 58.13610076904297 | -1.7654991149902344 |    3 |
+| Irkutsk Airport            | Irkutsk       | Asia/Irkutsk     |    52.268001556396 | 58.13610076904297 | -5.8680992126469675 |    4 |
+| Ulan-Ude Airport (Mukhino) | Ulan-ude      | Asia/Irkutsk     |  51.80780029296875 | 58.13610076904297 |  -6.328300476074219 |    5 |
+| Norilsk-Alykel Airport     | Norilsk       | Asia/Krasnoyarsk |  69.31109619140625 | 69.31109619140625 |                   0 |    1 |
+| Strezhevoy Airport         | Strezhevoy    | Asia/Krasnoyarsk |       60.709400177 | 69.31109619140625 |   -8.60169601440625 |    2 |
+| Bogashevo Airport          | Tomsk         | Asia/Krasnoyarsk |    56.380298614502 | 69.31109619140625 | -12.930797576904247 |    3 |
+| Yemelyanovo Airport        | Krasnoyarsk   | Asia/Krasnoyarsk |    56.172901153564 | 69.31109619140625 | -13.138195037842252 |    4 |
+| Abakan Airport             | Abakan        | Asia/Krasnoyarsk |   53.7400016784668 | 69.31109619140625 | -15.571094512939453 |    5 |
+| Barnaul Airport            | Barnaul       | Asia/Krasnoyarsk | 53.363800048828125 | 69.31109619140625 | -15.947296142578125 |    6 |
+| Gorno-Altaysk Airport      | Gorno-Altaysk | Asia/Krasnoyarsk |      51.9667015076 | 69.31109619140625 |  -17.34439468380625 |    7 |
+| Kyzyl Airport              | Kyzyl         | Asia/Krasnoyarsk |  51.66939926147461 | 69.31109619140625 |  -17.64169692993164 |    8 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Airport,
+    where: a.timezone in ["Asia/Irkutsk", "Asia/Krasnoyarsk"],
+    order_by: [a.timezone, selected_as(:rank)],
+    windows: [
+      tz: [
+        partition_by: a.timezone,
+        order_by: [desc: fragment("?[1]", a.coordinates)]
+      ]
+    ],
+    select: map(a, [:airport_name, :city, :timezone]),
+    select_merge: %{
+      ltd: fragment("?[1]", a.coordinates),
+      first_in_timezone: over(first_value(fragment("?[1]", a.coordinates)), :tz),
+      delta:
+        over(
+          fragment("?[1] - ?", a.coordinates, first_value(fragment("?[1]", a.coordinates))),
+          :tz
+        ),
+      rank: selected_as(over(rank(), :tz), :rank)
+    }
+
+  # macro example
+  Airport
+  |> where([a], a.timezone in ["Asia/Irkutsk", "Asia/Krasnoyarsk"])
+  |> order_by([a], [a.timezone, selected_as(:rank)])
+  |> windows([a],
+    tz: [
+      partition_by: a.timezone,
+      order_by: [desc: fragment("?[1]", a.coordinates)]
+    ]
+  )
+  |> select([a], map(a, [:airport_name, :city, :timezone]))
+  |> select_merge([a], %{
+    ltd: fragment("?[1]", a.coordinates),
+    first_in_timezone: over(first_value(fragment("?[1]", a.coordinates)), :tz),
+    delta:
+      over(fragment("?[1] - ?", a.coordinates, first_value(fragment("?[1]", a.coordinates))), :tz),
+    rank: selected_as(over(rank(), :tz), :rank)
+  })
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 12:26:48.564 [debug] QUERY OK source="airports" db=0.7ms idle=1940.9ms
+: SELECT a0."airport_name", a0."city", a0."timezone", a0."coordinates"[1], first_value(a0."coordinates"[1]) OVER "tz", a0."coordinates"[1] - first_value(a0."coordinates"[1]) OVER "tz", rank() OVER "tz" AS "rank" FROM "airports" AS a0 WHERE (a0."timezone" IN ('Asia/Irkutsk','Asia/Krasnoyarsk')) WINDOW "tz" AS (PARTITION BY a0."timezone" ORDER BY a0."coordinates"[1] DESC) ORDER BY a0."timezone", "rank" []
+: >>> :
+: [
+:   %{airport_name: "Ust-Ilimsk Airport", city: "Ust Ilimsk", delta: 0.0, first_in_timezone: 58.13610076904297, ltd: 58.13610076904297, rank: 1, timezone: "Asia/Irkutsk"},
+:   %{airport_name: "Ust-Kut Airport", city: "Ust-Kut", delta: -1.2793998718261719, first_in_timezone: 58.13610076904297, ltd: 56.8567008972168, rank: 2, timezone: "Asia/Irkutsk"},
+:   %{airport_name: "Bratsk Airport", city: "Bratsk", delta: -1.7654991149902344, first_in_timezone: 58.13610076904297, ltd: 56.370601654052734, rank: 3, timezone: "Asia/Irkutsk"},
+:   %{airport_name: "Irkutsk Airport", city: "Irkutsk", delta: -5.8680992126469675, first_in_timezone: 58.13610076904297, ltd: 52.268001556396, rank: 4, timezone: "Asia/Irkutsk"},
+:   %{airport_name: "Ulan-Ude Airport (Mukhino)", city: "Ulan-ude", delta: -6.328300476074219, first_in_timezone: 58.13610076904297, ltd: 51.80780029296875, rank: 5, timezone: "Asia/Irkutsk"},
+:   %{airport_name: "Norilsk-Alykel Airport", city: "Norilsk", delta: 0.0, first_in_timezone: 69.31109619140625, ltd: 69.31109619140625, rank: 1, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Strezhevoy Airport", city: "Strezhevoy", delta: -8.60169601440625, first_in_timezone: 69.31109619140625, ltd: 60.709400177, rank: 2, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Bogashevo Airport", city: "Tomsk", delta: -12.930797576904247, first_in_timezone: 69.31109619140625, ltd: 56.380298614502, rank: 3, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Yemelyanovo Airport", city: "Krasnoyarsk", delta: -13.138195037842252, first_in_timezone: 69.31109619140625, ltd: 56.172901153564, rank: 4, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Abakan Airport", city: "Abakan", delta: -15.571094512939453, first_in_timezone: 69.31109619140625, ltd: 53.7400016784668, rank: 5, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Barnaul Airport", city: "Barnaul", delta: -15.947296142578125, first_in_timezone: 69.31109619140625, ltd: 53.363800048828125, rank: 6, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Gorno-Altaysk Airport", city: "Gorno-Altaysk", delta: -17.34439468380625, first_in_timezone: 69.31109619140625, ltd: 51.9667015076, rank: 7, timezone: "Asia/Krasnoyarsk"},
+:   %{airport_name: "Kyzyl Airport", city: "Kyzyl", delta: -17.64169692993164, first_in_timezone: 69.31109619140625, ltd: 51.66939926147461, rank: 8, timezone: "Asia/Krasnoyarsk"}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
