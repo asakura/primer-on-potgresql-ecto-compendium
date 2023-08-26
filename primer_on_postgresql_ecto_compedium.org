@@ -8053,6 +8053,125 @@ BY~ при формировании раздела.
 
 Конечно, в случае, когда необходимо, наоборот, исключить какие-либо значения из
 рассмотрения, можно использовать конструкцию ~NOT IN~.
+
+Иногда возникают ситуации, когда от подзапроса требуется лишь установить сам
+факт наличия или отсутствия строк в конкретной таблице, удовлетворяющих
+определенному условию, а непосредственные значения атрибутов в этих строках
+интереса не представляют. В подобных случаях используют предикат ~EXISTS~ (или
+~NOT EXISTS~).
+
+В качестве примера выясним, в какие города нет рейсов из Москвы.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  -- Обратите внимание на ключевое слово DISTINCT в запросе. Оно необходимо, т.к.
+  -- кроме Москвы могут быть другие города, в которых есть более одного аэропорта.
+  SELECT DISTINCT a.city
+    FROM airports AS a
+   WHERE NOT EXISTS (
+       -- Поскольку от подзапроса в предикате EXISTS требуется только установить
+       -- факт наличия или отсутствия строк, соответствующих критерию отбора, то в
+       -- документации рекомендуется вместо списка столбцов (или символа «∗») в
+       -- предложении SELECT делать так:
+       SELECT 1
+         FROM routes AS r
+        WHERE r.departure_city = 'Moscow'
+          AND r.arrival_city = a.city
+     )
+     AND a.city <> 'Moscow'
+   ORDER BY city;
+#+END_SRC
+
+#+RESULTS:
+| city               |
+|--------------------|
+| Blagoveschensk     |
+| Cherepovets        |
+| Chita              |
+| Irkutsk            |
+| Ivanovo            |
+| Kaluga             |
+| Kogalym            |
+| Komsomolsk-on-Amur |
+| Kyzyl              |
+| Magadan            |
+| Nizhnekamsk        |
+| Novokuznetsk       |
+| Strezhevoy         |
+| Surgut             |
+| Ukhta              |
+| Ust Ilimsk         |
+| Ust-Kut            |
+| Yakutia            |
+| Yakutsk            |
+| Yaroslavl          |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  route_query =
+    from r in Route,
+      where: r.departure_city == "Moscow",
+      where: r.arrival_city == parent_as(:airport).city,
+      select: 1
+
+    from a in Airport,
+      as: :airport,
+      where: not exists(route_query),
+      where: a.city != "Moscow",
+      order_by: a.city,
+      select: map(a, [:city])
+
+  # macro example
+  route_query =
+    Route
+    |> where([r], r.departure_city == "Moscow")
+    |> where([r], r.arrival_city == parent_as(:airport).city)
+    |> select([r], 1)
+
+  Airport
+  |> from(as: :airport)
+  |> where([a], not exists(route_query))
+  |> where([a], a.city != "Moscow")
+  |> order_by([a], a.city)
+  |> select([a], map(a, [:city]))
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 08:58:35.940 [debug] QUERY OK source="airports" db=152.8ms idle=1081.2ms
+: SELECT a0."city" FROM "airports" AS a0 WHERE (NOT (exists((SELECT 1 FROM "routes" AS sr0 WHERE (sr0."departure_city" = 'Moscow') AND (sr0."arrival_city" = a0."city"))))) AND (a0."city" != 'Moscow') ORDER BY a0."city" []
+: >>> :
+: [
+:   %{city: "Blagoveschensk"},
+:   %{city: "Cherepovets"},
+:   %{city: "Chita"},
+:   %{city: "Irkutsk"},
+:   %{city: "Ivanovo"},
+:   %{city: "Kaluga"},
+:   %{city: "Kogalym"},
+:   %{city: "Komsomolsk-on-Amur"},
+:   %{city: "Kyzyl"},
+:   %{city: "Magadan"},
+:   %{city: "Nizhnekamsk"},
+:   %{city: "Novokuznetsk"},
+:   %{city: "Strezhevoy"},
+:   %{city: "Surgut"},
+:   %{city: "Ukhta"},
+:   %{city: "Ust Ilimsk"},
+:   %{city: "Ust-Kut"},
+:   %{city: "Yakutia"},
+:   %{city: "Yakutsk"},
+:   %{city: "Yaroslavl"}
+: ]
+
+И еще одна важная деталь. В представленном запросе мы использовали так
+называемый коррелированный (связанный) подзапрос. В подзапросах такого типа
+присутствует ссылка (ссылки) на таблицу из внешнего запроса.
+
+В теории это означает, что подзапрос выполняется не один раз для всего внешнего
+запроса, а для каждой строки, обрабатываемой во внешнем запросе. Однако на
+практике важную роль играет умение планировщика (это специальная подсистемав
+СУБД) оптимизировать подобные запросы с тем, чтобы по возможности избегать
+выполнения подзапроса для каждой строки из внешнего запроса.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
