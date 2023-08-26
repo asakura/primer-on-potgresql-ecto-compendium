@@ -8050,6 +8050,9 @@ BY~ при формировании раздела.
 :   %{airport_name: "Norilsk-Alykel Airport", city: "Norilsk", longitude: 69.31109619140625},
 :   %{airport_name: "Uytash Airport", city: "Makhachkala", longitude: 42.81679916381836}
 : ]
+
+Конечно, в случае, когда необходимо, наоборот, исключить какие-либо значения из
+рассмотрения, можно использовать конструкцию ~NOT IN~.
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
