@@ -8002,6 +8002,54 @@ BY~ при формировании раздела.
 :   %{arrival_city: "Barnaul", departure_city: "Krasnoyarsk", flight_no: "PG0653"},
 :   %{arrival_city: "Krasnoyarsk", departure_city: "Barnaul", flight_no: "PG0654"}
 : ]
+
+Можно сформировать множество значений для предиката ~IN~ с помощью скалярных
+подзапросов. Если мы захотим найти самый западный и самый восточный аэропорты и
+представить полученные сведения в наглядной форме, то запрос может быть таким:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT airport_name,
+         city,
+         coordinates[1] AS longitude
+    FROM airports
+   WHERE coordinates[1] IN (
+     ( SELECT max(coordinates[1]) FROM airports ),
+     ( SELECT min(coordinates[1]) FROM airports )
+   );
+#+END_SRC
+
+#+RESULTS:
+| airport_name           | city        |         longitude |
+|------------------------+-------------+-------------------|
+| Norilsk-Alykel Airport | Norilsk     | 69.31109619140625 |
+| Uytash Airport         | Makhachkala | 42.81679916381836 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  from a in Airport,
+    where: fragment("?[1]", a.coordinates) in [subquery(east_airport), subquery(west_airport)],
+    select: map(a, [:airport_name, :city]),
+    select_merge: %{longitude: fragment("?[1]", a.coordinates)}
+
+  # macro example
+  east_airport = select(Airport, max(fragment("?[1]", a.coordinates)))
+  west_airport = select(Airport, min(fragment("?[1]", a.coordinates)))
+
+  Airport
+  |> where([a], fragment("?[1]", a.coordinates) in [subquery(east_airport), subquery(west_airport)])
+  |> select([a], map(a, [:airport_name, :city]))
+  |> select_merge([a], %{longitude: fragment("?[1]", a.coordinates)})
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 18:22:29.508 [debug] QUERY OK source="airports" db=0.6ms idle=1454.7ms
+: SELECT a0."airport_name", a0."city", a0."coordinates"[1] FROM "airports" AS a0 WHERE (a0."coordinates"[1] IN ((SELECT max(sa0."coordinates"[1]) FROM "airports" AS sa0),(SELECT min(sa0."coordinates"[1]) FROM "airports" AS sa0))) []
+: >>> :
+: [
+:   %{airport_name: "Norilsk-Alykel Airport", city: "Norilsk", longitude: 69.31109619140625},
+:   %{airport_name: "Uytash Airport", city: "Makhachkala", longitude: 42.81679916381836}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
