@@ -8668,6 +8668,143 @@ BY~ при формировании раздела.
 :   %{arrival_city: "Irkutsk", departure_city: "St. Petersburg", fact_passengers: 20, flight_id: 60331, flight_no: "PG0198", fraction: 0.12, model: "Airbus A321-200", scheduled_departure_local: ~N[2016-08-15 09:10:00.000000], total_seats: 170},
 :   %{arrival_city: "Ulyanovsk", departure_city: "Perm", fact_passengers: 31, flight_id: 97150, flight_no: "PG0683", fraction: 0.32, model: "Sukhoi Superjet-100", scheduled_departure_local: ~N[2016-08-15 09:15:00.000000], total_seats: 97}
 : ]
+
+Рассмотренный сложный запрос можно сделать более наглядным за счет выделения
+подзапроса в отдельную конструкцию, которая называется *общее табличное
+выражение* (*Common Table Expression* — *CTE*).
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  WITH ts AS (
+    SELECT f.flight_id,
+           f.flight_no,
+           f.scheduled_departure_local,
+           f.departure_city,
+           f.arrival_city,
+           f.aircraft_code,
+           count(tf.ticket_no) AS fact_passengers,
+           ( SELECT count(s.seat_no)
+               FROM seats AS s
+              WHERE s.aircraft_code = f.aircraft_code
+           ) AS total_seats
+      FROM flights_v AS f
+             JOIN ticket_flights AS tf
+                 ON f.flight_id = tf.flight_id
+     WHERE f.status = 'Arrived'
+     GROUP BY 1, 2, 3, 4, 5, 6
+  )
+  SELECT ts.flight_id,
+         ts.flight_no,
+         ts.scheduled_departure_local,
+         ts.departure_city,
+         ts.arrival_city,
+         a.model,
+         ts.fact_passengers,
+         ts.total_seats,
+         round(ts.fact_passengers::numeric / ts.total_seats::numeric, 2) AS fraction
+    FROM ts
+           JOIN aircrafts AS a
+               ON a.aircraft_code = ts.aircraft_code
+   ORDER BY ts.scheduled_departure_local
+   LIMIT 10;
+#+END_SRC
+
+#+RESULTS:
+| flight_id | flight_no | scheduled_departure_local | departure_city | arrival_city     | model               | fact_passengers | total_seats | fraction |
+|-----------+-----------+---------------------------+----------------+------------------+---------------------+-----------------+-------------+----------|
+|     61531 | PG0360    | 2016-08-15 09:00:00       | St. Petersburg | Orenburg         | Bombardier CRJ-200  |               6 |          50 |     0.12 |
+|     40096 | PG0120    | 2016-08-15 09:00:00       | Moscow         | Mirnyj           | Boeing 737-300      |              35 |         130 |     0.27 |
+|    182960 | PG0032    | 2016-08-15 09:00:00       | Penza          | Moscow           | Cessna 208 Caravan  |               2 |          12 |     0.17 |
+|     46363 | PG0591    | 2016-08-15 09:00:00       | Moscow         | Tomsk            | Sukhoi Superjet-100 |              26 |          97 |     0.27 |
+|     11346 | PG0239    | 2016-08-15 09:05:00       | Moscow         | Khanty-Mansiysk  | Sukhoi Superjet-100 |              60 |          97 |     0.62 |
+|     23643 | PG0414    | 2016-08-15 09:05:00       | Moscow         | Murmansk         | Bombardier CRJ-200  |              12 |          50 |     0.24 |
+|    200088 | PG0248    | 2016-08-15 09:05:00       | Sochi          | Nizhniy Novgorod | Bombardier CRJ-200  |               3 |          50 |     0.06 |
+|    214043 | PG0550    | 2016-08-15 09:05:00       | Beslan         | Moscow           | Bombardier CRJ-200  |              10 |          50 |     0.20 |
+|     60331 | PG0198    | 2016-08-15 09:10:00       | St. Petersburg | Irkutsk          | Airbus A321-200     |              20 |         170 |     0.12 |
+|      9249 | PG0509    | 2016-08-15 09:15:00       | Moscow         | Elista           | Sukhoi Superjet-100 |              13 |          97 |     0.13 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # macro example
+  seats_query =
+    Seat
+    |> where([s], s.aircraft_code == parent_as(:flight).aircraft_code)
+    |> select([s], count(s.seat_no))
+
+  tickets_query =
+    FlightExtended
+    |> from(as: :flight)
+    |> join(:inner, [f], tf in TicketFlights, on: f.flight_id == tf.flight_id)
+    |> where([f], f.status == "Arrived")
+    |> group_by([f], [
+      f.flight_id,
+      f.flight_no,
+      f.scheduled_departure_local,
+      f.departure_city,
+      f.arrival_city,
+      f.aircraft_code
+    ])
+    |> select(
+      [f],
+      map(f, [
+        :flight_id,
+        :flight_no,
+        :scheduled_departure_local,
+        :departure_city,
+        :arrival_city,
+        :aircraft_code
+      ])
+    )
+    |> select_merge(
+      [f, tf],
+      %{
+        fact_passengers: selected_as(count(tf.ticket_no), :fact_passengers),
+        total_seats: selected_as(subquery(seats_query), :total_seats)
+      }
+    )
+
+  "ts"
+  |> with_cte("ts", as: ^tickets_query)
+  |> join(:inner, [ts], a in Aircraft, on: ts.aircraft_code == a.aircraft_code)
+  |> order_by([ts], ts.scheduled_departure_local)
+  |> limit(10)
+  |> select(
+    [ts],
+    map(ts, [
+      :flight_id,
+      :flight_no,
+      :scheduled_departure_local,
+      :departure_city,
+      :arrival_city,
+      :fact_passengers,
+      :total_seats
+    ])
+  )
+  |> select_merge([ts, a], map(a, [:model]))
+  |> select_merge([ts], %{
+    fraction:
+      type(
+        fragment("round(?::numeric / ?::numeric, 2)", ts.fact_passengers, ts.total_seats),
+        :float
+      )
+  })
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 13:02:37.783 [debug] QUERY OK source="ts" db=7641.3ms idle=1192.1ms
+: WITH "ts" AS (SELECT sf0."flight_id" AS "flight_id", sf0."flight_no" AS "flight_no", sf0."scheduled_departure_local" AS "scheduled_departure_local", sf0."departure_city" AS "departure_city", sf0."arrival_city" AS "arrival_city", sf0."aircraft_code" AS "aircraft_code", count(st1."ticket_no") AS "fact_passengers", (SELECT count(sss0."seat_no") AS "result" FROM "seats" AS sss0 WHERE (sss0."aircraft_code" = sf0."aircraft_code")) AS "total_seats" FROM "flights_v" AS sf0 INNER JOIN "ticket_flights" AS st1 ON sf0."flight_id" = st1."flight_id" WHERE (sf0."status" = 'Arrived') GROUP BY sf0."flight_id", sf0."flight_no", sf0."scheduled_departure_local", sf0."departure_city", sf0."arrival_city", sf0."aircraft_code") SELECT t0."flight_id", t0."flight_no", t0."scheduled_departure_local", t0."departure_city", t0."arrival_city", t0."fact_passengers", t0."total_seats", a1."model", round(t0."fact_passengers"::numeric / t0."total_seats"::numeric, 2)::float FROM "ts" AS t0 INNER JOIN "aircrafts" AS a1 ON t0."aircraft_code" = a1."aircraft_code" ORDER BY t0."scheduled_departure_local" LIMIT 10 []
+: >>> :
+: [
+:   %{arrival_city: "Orenburg", departure_city: "St. Petersburg", fact_passengers: 6, flight_id: 61531, flight_no: "PG0360", fraction: 0.12, model: "Bombardier CRJ-200", scheduled_departure_local: ~N[2016-08-15 09:00:00.000000], total_seats: 50},
+:   %{arrival_city: "Mirnyj", departure_city: "Moscow", fact_passengers: 35, flight_id: 40096, flight_no: "PG0120", fraction: 0.27, model: "Boeing 737-300", scheduled_departure_local: ~N[2016-08-15 09:00:00.000000], total_seats: 130},
+:   %{arrival_city: "Moscow", departure_city: "Penza", fact_passengers: 2, flight_id: 182960, flight_no: "PG0032", fraction: 0.17, model: "Cessna 208 Caravan", scheduled_departure_local: ~N[2016-08-15 09:00:00.000000], total_seats: 12},
+:   %{arrival_city: "Tomsk", departure_city: "Moscow", fact_passengers: 26, flight_id: 46363, flight_no: "PG0591", fraction: 0.27, model: "Sukhoi Superjet-100", scheduled_departure_local: ~N[2016-08-15 09:00:00.000000], total_seats: 97},
+:   %{arrival_city: "Nizhniy Novgorod", departure_city: "Sochi", fact_passengers: 3, flight_id: 200088, flight_no: "PG0248", fraction: 0.06, model: "Bombardier CRJ-200", scheduled_departure_local: ~N[2016-08-15 09:05:00.000000], total_seats: 50},
+:   %{arrival_city: "Moscow", departure_city: "Beslan", fact_passengers: 10, flight_id: 214043, flight_no: "PG0550", fraction: 0.2, model: "Bombardier CRJ-200", scheduled_departure_local: ~N[2016-08-15 09:05:00.000000], total_seats: 50},
+:   %{arrival_city: "Khanty-Mansiysk", departure_city: "Moscow", fact_passengers: 60, flight_id: 11346, flight_no: "PG0239", fraction: 0.62, model: "Sukhoi Superjet-100", scheduled_departure_local: ~N[2016-08-15 09:05:00.000000], total_seats: 97},
+:   %{arrival_city: "Murmansk", departure_city: "Moscow", fact_passengers: 12, flight_id: 23643, flight_no: "PG0414", fraction: 0.24, model: "Bombardier CRJ-200", scheduled_departure_local: ~N[2016-08-15 09:05:00.000000], total_seats: 50},
+:   %{arrival_city: "Irkutsk", departure_city: "St. Petersburg", fact_passengers: 20, flight_id: 60331, flight_no: "PG0198", fraction: 0.12, model: "Airbus A321-200", scheduled_departure_local: ~N[2016-08-15 09:10:00.000000], total_seats: 170},
+:   %{arrival_city: "Ulyanovsk", departure_city: "Perm", fact_passengers: 31, flight_id: 97150, flight_no: "PG0683", fraction: 0.32, model: "Sukhoi Superjet-100", scheduled_departure_local: ~N[2016-08-15 09:15:00.000000], total_seats: 97}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
