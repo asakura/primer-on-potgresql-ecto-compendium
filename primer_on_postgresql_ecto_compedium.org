@@ -8371,6 +8371,74 @@ BY~ при формировании раздела.
 :     model: "Sukhoi Superjet-100"
 :   }
 : ]
+
+В качестве еще одного примера использования подзапроса в предложении ~FROM~
+решим такую задачу: получить перечень аэропортов в тех городах, в которых больше
+одного аэропорта.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT aa.city,
+         aa.airport_code,
+         aa.airport_name
+    FROM (
+      SELECT city, count(*)
+        FROM airports
+       GROUP BY city
+      HAVING count(*) > 1
+    ) AS a
+         JOIN airports AS aa
+             ON a.city = aa.city
+   ORDER BY aa.city, aa.airport_name;
+#+END_SRC
+
+#+RESULTS:
+| city      | airport_code | airport_name                       |
+|-----------+--------------+------------------------------------|
+| Moscow    | DME          | Domodedovo International Airport   |
+| Moscow    | SVO          | Sheremetyevo International Airport |
+| Moscow    | VKO          | Vnukovo International Airport      |
+| Ulyanovsk | ULV          | Ulyanovsk Baratayevka Airport      |
+| Ulyanovsk | ULY          | Ulyanovsk East Airport             |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  base_query =
+    from a in Airport,
+      group_by: a.city,
+      having: count() > 1,
+      select: map(a, [:city]),
+      select_merge: %{count: count()}
+
+  from a in subquery(base_query),
+    join: aa in Airport,
+    on: a.city == aa.city,
+    order_by: [aa.city, aa.airport_name],
+    select: map(aa, [:city, :airport_code, :airport_name])
+
+  # macro example
+  Airport
+  |> group_by([a], a.city)
+  |> having([a], count() > 1)
+  |> select([a], map(a, [:city]))
+  |> select_merge(%{count: count()})
+  |> subquery()
+  |> join(:inner, [a], aa in Airport, on: a.city == aa.city)
+  |> order_by([a, aa], [aa.city, aa.airport_name])
+  |> select([a, aa], map(aa, [:city, :airport_code, :airport_name]))
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 09:18:35.533 [debug] QUERY OK db=0.7ms idle=1194.7ms
+: SELECT a1."city", a1."airport_code", a1."airport_name" FROM (SELECT sa0."city" AS "city", count(*) AS "count" FROM "airports" AS sa0 GROUP BY sa0."city" HAVING (count(*) > 1)) AS s0 INNER JOIN "airports" AS a1 ON s0."city" = a1."city" ORDER BY a1."city", a1."airport_name" []
+: >>> :
+: [
+:   %{airport_code: "DME", airport_name: "Domodedovo International Airport", city: "Moscow"},
+:   %{airport_code: "SVO", airport_name: "Sheremetyevo International Airport", city: "Moscow"},
+:   %{airport_code: "VKO", airport_name: "Vnukovo International Airport", city: "Moscow"},
+:   %{airport_code: "ULV", airport_name: "Ulyanovsk Baratayevka Airport", city: "Ulyanovsk"},
+:   %{airport_code: "ULY", airport_name: "Ulyanovsk East Airport", city: "Ulyanovsk"}
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
