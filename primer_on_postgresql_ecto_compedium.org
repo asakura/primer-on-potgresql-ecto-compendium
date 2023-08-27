@@ -8276,6 +8276,101 @@ BY~ при формировании раздела.
 :   %{business: 0, comfort: 0, economy: 12, model: "Cessna 208 Caravan"},
 :   %{business: 12, comfort: 0, economy: 85, model: "Sukhoi Superjet-100"}
 : ]
+
+А в этом варианте решения задачи используется подзапрос в предложении ~FROM~.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT s2.model,
+         string_agg(
+           s2.fare_conditions || ' (' || s2.num || ')',
+           ', '
+         )
+    FROM (
+      SELECT a.model,
+             s.fare_conditions,
+             count(*) AS num
+        FROM aircrafts a
+             JOIN seats s
+                 ON a.aircraft_code = s.aircraft_code
+       GROUP BY 1, 2
+       ORDER BY 1, 2
+      ) AS s2
+     GROUP BY s2.model
+   ORDER BY s2.model;
+#+END_SRC
+
+#+RESULTS:
+| model               | string_agg                                 |
+|---------------------+--------------------------------------------|
+| Airbus A319-100     | Business (20), Economy (96)                |
+| Airbus A320-200     | Business (20), Economy (120)               |
+| Airbus A321-200     | Business (28), Economy (142)               |
+| Boeing 737-300      | Business (12), Economy (118)               |
+| Boeing 767-300      | Business (30), Economy (192)               |
+| Boeing 777-300      | Business (30), Comfort (48), Economy (324) |
+| Bombardier CRJ-200  | Economy (50)                               |
+| Cessna 208 Caravan  | Economy (12)                               |
+| Sukhoi Superjet-100 | Business (12), Economy (85)                |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  # keyword example
+  base_query =
+    from a in Aircraft,
+      join: s in assoc(a, :seats),
+      group_by: [a.model, s.fare_conditions],
+      order_by: [a.model, s.fare_conditions],
+      select: map(a, [:model]),
+      select_merge: map(s, [:fare_conditions]),
+      select_merge: %{num: count()}
+
+  from s in subquery(base_query),
+    group_by: s.model,
+    order_by: s.model,
+    select: map(s, [:model]),
+    select_merge: %{
+      fare_conditions:
+        fragment("string_agg(? || ' (' || ? || ')', ', ')", s.fare_conditions, s.num)
+    }
+
+  # macro example
+  Aircraft
+  |> join(:inner, [a], s in assoc(a, :seats))
+  |> group_by([a, s], [a.model, s.fare_conditions])
+  |> order_by([a, s], [a.model, s.fare_conditions])
+  |> select([a], map(a, [:model]))
+  |> select_merge([a, s], map(s, [:fare_conditions]))
+  |> select_merge(%{num: count()})
+  |> subquery()
+  |> group_by([s], s.model)
+  |> order_by([s], s.model)
+  |> select([s], map(s, [:model]))
+  |> select_merge([s], %{
+    fare_conditions: fragment("string_agg(? || ' (' || ? || ')', ', ')", s.fare_conditions, s.num)
+  })
+  |> Repo.all()
+#+END_SRC
+
+#+RESULTS:
+: 09:15:04.283 [debug] QUERY OK db=1.9ms idle=1880.4ms
+: SELECT s0."model", string_agg(s0."fare_conditions" || ' (' || s0."num" || ')', ', ') FROM (SELECT sa0."model" AS "model", ss1."fare_conditions" AS "fare_conditions", count(*) AS "num" FROM "aircrafts" AS sa0 INNER JOIN "seats" AS ss1 ON ss1."aircraft_code" = sa0."aircraft_code" GROUP BY sa0."model", ss1."fare_conditions" ORDER BY sa0."model", ss1."fare_conditions") AS s0 GROUP BY s0."model" ORDER BY s0."model" []
+: >>> :
+: [
+:   %{fare_conditions: "Business (20), Economy (96)", model: "Airbus A319-100"},
+:   %{fare_conditions: "Business (20), Economy (120)", model: "Airbus A320-200"},
+:   %{fare_conditions: "Business (28), Economy (142)", model: "Airbus A321-200"},
+:   %{fare_conditions: "Business (12), Economy (118)", model: "Boeing 737-300"},
+:   %{fare_conditions: "Business (30), Economy (192)", model: "Boeing 767-300"},
+:   %{
+:     fare_conditions: "Business (30), Comfort (48), Economy (324)",
+:     model: "Boeing 777-300"
+:   },
+:   %{fare_conditions: "Economy (50)", model: "Bombardier CRJ-200"},
+:   %{fare_conditions: "Economy (12)", model: "Cessna 208 Caravan"},
+:   %{
+:     fare_conditions: "Business (12), Economy (85)",
+:     model: "Sukhoi Superjet-100"
+:   }
+: ]
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
