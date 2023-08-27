@@ -8439,6 +8439,39 @@ BY~ при формировании раздела.
 :   %{airport_code: "ULV", airport_name: "Ulyanovsk Baratayevka Airport", city: "Ulyanovsk"},
 :   %{airport_code: "ULY", airport_name: "Ulyanovsk East Airport", city: "Ulyanovsk"}
 : ]
+
+Для иллюстрации использования подзапросов в предложении ~HAVING~ решим такую
+задачу: определить число маршрутов, исходящих из тех аэропортов, которые
+расположены восточнее географической долготы 150◦.
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT departure_airport_code,
+         departure_city,
+         count(*)
+    FROM routes
+   GROUP BY departure_airport_code, departure_city
+  HAVING departure_airport_code IN (
+    SELECT airport_code
+      FROM airports
+     WHERE coordinates[0] > 150
+  )
+   ORDER BY count DESC;
+#+END_SRC
+
+#+RESULTS:
+| departure_airport_code | departure_city | count |
+|------------------------+----------------+-------|
+| DYR                    | Anadyr         |     4 |
+| GDX                    | Magadan        |     3 |
+| PKC                    | Petropavlovsk  |     1 |
+
+#+BEGIN_SRC elixir :exports both :eval no
+  TODO заимплементить
+  # keyword example
+  # macro example
+#+END_SRC
+
+#+RESULTS:
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
