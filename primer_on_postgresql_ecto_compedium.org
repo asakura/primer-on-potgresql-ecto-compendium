@@ -8909,6 +8909,21 @@ BY~ при формировании раздела.
 : 0
 : % %%
 : 2949857
+*** Вопрос 2
+Этот запрос выбирает из таблицы ~tickets~ всех пассажиров с именами, состоящими
+из трех букв (в шаблоне присутствуют три символа «_»): src_sql[:exports
+code]{SELECT passenger_name FROM tickets WHERE passenger_name LIKE '___ %';}
+
+Предложите шаблон поиска в операторе ~LIKE~ для выбора из этой таблицы всех
+пассажиров с фамилиями, состоящими из пяти букв.
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :eval no
+  SELECT passenger_name
+    FROM tickets
+   WHERE passenger_name LIKE '_____ %';
+#+END_SRC
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
