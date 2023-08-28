@@ -9062,6 +9062,13 @@ code]{SELECT passenger_name FROM tickets WHERE passenger_name LIKE '___ %';}
 |          | Проверяет, является ли результат логического выражения значением ~true~ или ~false~      |
 | ~t~      | src_sql[:exports code]{true IS NOT UNKNOWN} -> ~t~                                       |
 | ~f~      | src_sql[:exports code]{NULL::boolean IS NOT UNKNOWN} -> ~f~ (а не ~NULL~)                |
+*** Вопрос 5
+В разделе документации 9.17 «Условные выражения» представлены условные
+выражения, которые поддерживаются в PostgreSQL. В тексте главы была рассмотрена
+конструкция ~CASE~. Самостоятельно ознакомьтесь с функциями ~COALESCE~,
+~NULLIF~, ~GREATEST~ и ~LEAST~.
+
+*TODO* ответить на вопрос
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
