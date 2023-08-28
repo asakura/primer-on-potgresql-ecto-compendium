@@ -8942,6 +8942,126 @@ code]{SELECT passenger_name FROM tickets WHERE passenger_name LIKE '___ %';}
 | ?column? |
 |----------|
 | t        |
+*** Вопрос 4
+В разделе документации 9.2 «Функция и операторы сравнения» представлены
+различные предикаты сравнения, кроме предиката ~BETWEEN~, рассмотренного в этой
+главе. Самостоятельно ознакомьтесь с ними.
+
+*ОТВЕТ*:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  WITH examples AS (
+    SELECT NULL, 'Между (включая границы)'
+     UNION ALL
+    SELECT 2 BETWEEN 1 AND 3, '2 BETWEEN 1 AND 3 -> t'
+     UNION ALL
+    SELECT 2 BETWEEN 3 AND 1, '2 BETWEEN 3 AND 1 -> f'
+     UNION ALL
+    SELECT NULL, 'Не между (обратное к BETWEEN)'
+     UNION ALL
+    SELECT 2 NOT BETWEEN 1 AND 3, '2 NOT BETWEEN 1 AND 3 -> f'
+     UNION ALL
+    SELECT NULL, 'Между, после сортировки граничных значений'
+     UNION ALL
+    SELECT 2 BETWEEN SYMMETRIC 3 AND 1, '2 BETWEEN SYMMETRIC 3 AND 1 -> t'
+     UNION ALL
+    SELECT NULL, 'Не равно, при этом NULL воспринимается как обычное значение'
+     UNION ALL
+    SELECT 1 IS DISTINCT FROM NULL, '1 IS DISTINCT FROM NULL -> t (а не NULL)'
+     UNION ALL
+    SELECT NULL IS DISTINCT FROM NULL, 'NULL IS DISTINCT FROM NULL -> f (а не NULL)'
+     UNION ALL
+    SELECT NULL, 'Равно, при этом NULL воспринимается как обычно значение'
+     UNION ALL
+    SELECT 1 IS NOT DISTINCT FROM NULL, '1 IS NOT DISTINCT FROM NULL -> f (а не NULL)'
+     UNION ALL
+    SELECT NULL IS NOT DISTINCT FROM NULL, 'NULL IS NOT DISTINCT FROM NULL -> t (а не NULL)'
+     UNION ALL
+    SELECT NULL, 'Проверяет, является ли значение эквивалентным NULL'
+     UNION ALL
+    SELECT 1.5 IS NULL, '1.5 IS NULL -> f'
+     UNION ALL
+    SELECT NULL, 'Проверяет, отличается ли значение от NULL'
+     UNION ALL
+    SELECT 'null' IS NOT NULL, '''null'' IS NOT NULL -> t'
+     UNION ALL
+    SELECT NULL, 'Проверяет, является ли результат логического выражения значением true'
+     UNION ALL
+    SELECT true IS TRUE, 'true IS TRUE -> t'
+     UNION ALL
+    SELECT NULL::boolean IS TRUE, 'NULL::boolean IS TRUE -> f (а не NULL)'
+     UNION ALL
+    SELECT NULL, 'Проверяет, является ли результат логического выражения значением false или неизвестным'
+     UNION ALL
+    SELECT true IS NOT TRUE, 'true IS NOT TRUE -> f'
+     UNION ALL
+    SELECT NULL::boolean IS NOT TRUE, 'NULL::boolean IS NOT TRUE -> t (а не NULL)'
+     UNION ALL
+    SELECT NULL, 'Проверяет, является ли результат логического выражения значением false'
+     UNION ALL
+    SELECT true IS FALSE, 'true IS FALSE -> f'
+     UNION ALL
+    SELECT NULL::boolean IS FALSE, 'NULL::boolean IS FALSE -> f (а не NULL)'
+     UNION ALL
+    SELECT NULL, 'Проверяет, является ли результат логического выражения значением true или неизвестным'
+     UNION ALL
+    SELECT true IS NOT FALSE, 'true IS NOT FALSE -> f'
+     UNION ALL
+    SELECT NULL::boolean IS NOT FALSE, 'NULL::boolean IS NOT FALSE -> t (а не NULL)'
+     UNION ALL
+    SELECT NULL, 'Проверяет, является ли результат логического выражения неизвестным значением'
+     UNION ALL
+    SELECT true IS UNKNOWN, 'true IS UNKNOWN -> f'
+     UNION ALL
+    SELECT NULL::boolean IS UNKNOWN, 'NULL::boolean IS UNKNOWN -> t (а не NULL)'
+     UNION ALL
+    SELECT NULL, 'Проверяет, является ли результат логического выражения значением true или false'
+     UNION ALL
+    SELECT true IS NOT UNKNOWN, 'true IS NOT UNKNOWN -> t'
+     UNION ALL
+    SELECT NULL::boolean IS NOT UNKNOWN, 'NULL::boolean IS NOT UNKNOWN -> f (а не NULL)'
+    )
+  SELECT * FROM examples
+#+END_SRC
+
+#+RESULTS:
+| ?column? | ?column?                                                                                 |
+|----------+------------------------------------------------------------------------------------------|
+|          | Между (включая границы)                                                                  |
+| ~t~      | src_sql[:exports code]{2 BETWEEN 1 AND 3} -> ~t~                                         |
+| ~f~      | src_sql[:exports code]{2 BETWEEN 3 AND 1} -> ~f~                                         |
+|          | Не между (обратное к ~BETWEEN~)                                                          |
+| ~f~      | src_sql[:exports code]{2 NOT BETWEEN 1 AND 3} -> ~f~                                     |
+|          | Между, после сортировки граничных значений                                               |
+| ~t~      | src_sql[:exports code]{2 BETWEEN SYMMETRIC 3 AND 1} -> ~t~                               |
+|          | Не равно, при этом NULL воспринимается как обычное значение                              |
+| ~t~      | src_sql[:exports code]{1 IS DISTINCT FROM NULL} -> ~t~ (а не ~NULL~)                     |
+| ~f~      | src_sql[:exports code]{NULL IS DISTINCT FROM NULL} -> ~f~ (а не ~NULL~)                  |
+|          | Равно, при этом NULL воспринимается как обычно значение                                  |
+| ~f~      | src_sql[:exports code]{1 IS NOT DISTINCT FROM NULL} -> ~f~ (а не ~NULL~)                 |
+| ~t~      | src_sql[:exports code]{NULL IS NOT DISTINCT FROM NULL} -> ~t~ (а не ~NULL~)              |
+|          | Проверяет, является ли значение эквивалентным ~NULL~                                     |
+| ~f~      | src_sql[:exports code]{1.5 IS NULL} -> ~f~                                               |
+|          | Проверяет, отличается ли значение от ~NULL~                                              |
+| ~t~      | src_sql[:exports code]{'null' IS NOT NULL} -> ~t~                                        |
+|          | Проверяет, является ли результат логического выражения значением true                    |
+| ~t~      | src_sql[:exports code]{true IS TRUE} -> ~t~                                              |
+| ~f~      | src_sql[:exports code]{NULL::boolean IS TRUE} -> ~f~ (а не ~NULL~)                       |
+|          | Проверяет, является ли результат логического выражения значением ~false~ или неизвестным |
+| ~f~      | src_sql[:exports code]{true IS NOT TRUE} -> ~f~                                          |
+| ~t~      | src_sql[:exports code]{NULL::boolean IS NOT TRUE} -> ~t~ (а не ~NULL~)                   |
+|          | Проверяет, является ли результат логического выражения значением ~false~                 |
+| ~f~      | src_sql[:exports code]{true IS FALSE} -> ~f~                                             |
+| ~f~      | src_sql[:exports code]{NULL::boolean IS FALSE} -> ~f~ (а не ~NULL~)                      |
+|          | Проверяет, является ли результат логического выражения значением ~true~ или неизвестным  |
+| ~t~      | src_sql[:exports code]{true IS NOT FALSE} -> f                                           |
+| ~t~      | src_sql[:exports code]{NULL::boolean IS NOT FALSE} -> t (а не ~NULL~)                    |
+|          | Проверяет, является ли результат логического выражения неизвестным значением             |
+| ~f~      | src_sql[:exports code]{true IS UNKNOWN} -> ~f~                                           |
+| ~t~      | src_sql[:exports code]{NULL::boolean IS UNKNOWN} -> ~t~ (а не ~NULL~)                    |
+|          | Проверяет, является ли результат логического выражения значением ~true~ или ~false~      |
+| ~t~      | src_sql[:exports code]{true IS NOT UNKNOWN} -> ~t~                                       |
+| ~f~      | src_sql[:exports code]{NULL::boolean IS NOT UNKNOWN} -> ~f~ (а не ~NULL~)                |
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
