@@ -9113,6 +9113,29 @@ code]{SELECT passenger_name FROM tickets WHERE passenger_name LIKE '___ %';}
 котором использовалось бы полное внешнее соединение — ~FULL OUTER JOIN~.
 
 *TODO* ответить на вопрос
+*** Вопрос 9
+Для ответа на вопрос, сколько рейсов выполняется из Москвы в Санкт-Петербург,
+можно написать совсем простой запрос:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT count(*)
+    FROM routes
+   WHERE departure_city = 'Moscow'
+     AND arrival_city   = 'St. Petersburg';
+#+END_SRC
+
+#+RESULTS:
+| count |
+|-------|
+|    12 |
+
+А с помощью какого запроса можно получить результат в таком виде?
+
+| departure_city | arrival_city   | count |
+|----------------+----------------+-------|
+| Moscow         | St. Petersburg | 12    |
+
+*TODO* ответить на вопрос
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
