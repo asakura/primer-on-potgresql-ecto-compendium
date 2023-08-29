@@ -9136,6 +9136,130 @@ code]{SELECT passenger_name FROM tickets WHERE passenger_name LIKE '___ %';}
 | Moscow         | St. Petersburg | 12    |
 
 *TODO* ответить на вопрос
+*** Вопрос 10
+Выяснить, сколько различных рейсов выполняется из каждого города, без учета
+частоты рейсов в неделю, можно с помощью обращения к представлению ~routes~:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT departure_city,
+         count(*)
+    FROM routes
+   GROUP BY departure_city
+   ORDER BY count DESC;
+#+END_SRC
+
+#+RESULTS:
+| departure_city     | count |
+|--------------------+-------|
+| Moscow             |   154 |
+| St. Petersburg     |    35 |
+| Novosibirsk        |    19 |
+| Yekaterinburg      |    15 |
+| Rostov             |    14 |
+| Sochi              |    14 |
+| Krasnoyarsk        |    13 |
+| Surgut             |    11 |
+| Perm               |    11 |
+| Ulyanovsk          |    11 |
+| Novokuznetsk       |    10 |
+| Bryansk            |    10 |
+| Kazan              |    10 |
+| Khanty-Mansiysk    |    10 |
+| Tyumen             |     9 |
+| Sovetskiy          |     9 |
+| Novy Urengoy       |     9 |
+| Arkhangelsk        |     9 |
+| Irkutsk            |     9 |
+| Petrozavodsk       |     8 |
+| Khabarovsk         |     8 |
+| Tomsk              |     8 |
+| Chelyabinsk        |     8 |
+| Nizhniy Novgorod   |     7 |
+| Abakan             |     7 |
+| Elista             |     7 |
+| Mirnyj             |     7 |
+| Ufa                |     7 |
+| Krasnodar          |     7 |
+| Kurgan             |     6 |
+| Kirov              |     6 |
+| Belgorod           |     6 |
+| Neryungri          |     6 |
+| Volgograd          |     6 |
+| Vorkuta            |     6 |
+| Barnaul            |     6 |
+| Yakutsk            |     5 |
+| Nizhnekamsk        |     5 |
+| Noyabrsk           |     5 |
+| Orenburg           |     5 |
+| Cheboksary         |     5 |
+| Ust Ilimsk         |     5 |
+| Gelendzhik         |     5 |
+| Yuzhno-Sakhalinsk  |     5 |
+| Kemorovo           |     5 |
+| Syktyvkar          |     5 |
+| Yoshkar-Ola        |     5 |
+| Mineralnye Vody    |     5 |
+| Nadym              |     5 |
+| Orsk               |     4 |
+| Anadyr             |     4 |
+| Astrakhan          |     4 |
+| Gorno-Altaysk      |     4 |
+| Kaliningrad        |     4 |
+| Kaluga             |     4 |
+| Kogalym            |     4 |
+| Magnetiogorsk      |     4 |
+| Makhachkala        |     4 |
+| Naryan-Mar         |     4 |
+| Nizhnevartovsk     |     4 |
+| Omsk               |     4 |
+| Penza              |     4 |
+| Saratov            |     4 |
+| Stavropol          |     4 |
+| Tambow             |     4 |
+| Pskov              |     3 |
+| Ukhta              |     3 |
+| Ulan-ude           |     3 |
+| Chita              |     3 |
+| Magadan            |     3 |
+| Samara             |     3 |
+| Cherepovets        |     3 |
+| Yakutia            |     3 |
+| Vladivostok        |     3 |
+| Bugulma            |     3 |
+| Beloyarsky         |     3 |
+| Kyzyl              |     3 |
+| Yaroslavl          |     3 |
+| Kursk              |     3 |
+| Norilsk            |     3 |
+| Anapa              |     3 |
+| Nyagan             |     3 |
+| Nalchik            |     3 |
+| Nefteyugansk       |     2 |
+| Murmansk           |     2 |
+| Salekhard          |     2 |
+| Saransk            |     2 |
+| Beslan             |     2 |
+| Lipetsk            |     2 |
+| Ivanovo            |     2 |
+| Grozny             |     2 |
+| Uraj               |     2 |
+| Usinsk             |     2 |
+| Voronezh           |     2 |
+| Petropavlovsk      |     1 |
+| Ust-Kut            |     1 |
+| Blagoveschensk     |     1 |
+| Izhevsk            |     1 |
+| Komsomolsk-on-Amur |     1 |
+| Strezhevoy         |     1 |
+| Bratsk             |     1 |
+
+Модифицируйте этот запрос так, чтобы он выводил число направлений, по которым
+летают самолеты из каждого города. Например, из Москвы в Санкт-Петербург летает
+несколько различных рейсов, но все эти рейсы относятся к одному направлению.
+
+Указание: нужно передать параметр в функцию ~count~.
+
+*TODO* ответить на вопрос
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
