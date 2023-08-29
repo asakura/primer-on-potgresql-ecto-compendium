@@ -9076,6 +9076,37 @@ code]{SELECT passenger_name FROM tickets WHERE passenger_name LIKE '___ %';}
 представления ~routes~ и таблицы ~aircrafts~.
 
 *TODO* ответить на вопрос
+*** Вопрос 7
+Самые крупные самолеты в нашей авиакомпании — это Boeing 777-300. Выяснить,
+между какими парами городов они летают, поможет запрос:
+
+#+BEGIN_SRC sql :engine postgres :exports both :eval no
+  SELECT DISTINCT departure_city,
+                  arrival_city
+    FROM routes r
+         JOIN aircrafts a
+             ON r.aircraft_code = a.aircraft_code
+   WHERE a.model = 'Boeing 777-300'
+   ORDER BY 1;
+#+END_SRC
+
+#+RESULTS:
+| departure_city | arrival_city  |
+|----------------+---------------|
+| Moscow         | Novosibirsk   |
+| Moscow         | Perm          |
+| Moscow         | Sochi         |
+| Moscow         | Yekaterinburg |
+| Novosibirsk    | Moscow        |
+| Perm           | Moscow        |
+| Sochi          | Moscow        |
+| Yekaterinburg  | Moscow        |
+
+К сожалению, в этой выборке информация дублируется. Пары городов приведены по
+два раза: для рейса «туда» и для рейса «обратно». Модифицируйте запростаким
+образом, чтобы каждая пара городов была выведена только один раз.
+
+*TODO* ответить на вопрос
 * Схема базы
 ** Миграции
 #+BEGIN_SRC elixir :eval no
